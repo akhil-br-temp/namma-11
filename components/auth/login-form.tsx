@@ -13,6 +13,10 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const nextPath = useMemo(() => searchParams.get("next") ?? "/dashboard", [searchParams]);
+  const callbackUrl = useMemo(() => {
+    const base = window.location.origin;
+    return `${base}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+  }, [nextPath]);
 
   const onEmailLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,7 +45,7 @@ export function LoginForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: callbackUrl,
       },
     });
 
@@ -63,7 +67,7 @@ export function LoginForm() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: callbackUrl,
       },
     });
 
