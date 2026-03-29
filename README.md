@@ -83,11 +83,13 @@ https://namma-11.vercel.app/api/cron/sync-fixtures?secret=<CRON_SECRET>
 1. Ensure `CRON_SECRET` is added in Vercel Project -> Settings -> Environment Variables.
 2. Deploy this repo with `vercel.json` included.
 3. Vercel will schedule:
-	 - fixtures: every 24h
-	 - squads: every 6h
-	 - lineups: every 30m
-	 - live-score pipeline: every minute
+	 - fixtures: `0 0 * * *` (daily UTC)
+	 - squads: `15 0 * * *` (daily UTC)
+	 - lineups: `30 0 * * *` (daily UTC)
+	 - live-score pipeline: `45 0 * * *` (daily UTC)
 4. Check runs in Vercel Dashboard -> Functions -> Cron Jobs.
+
+Note: On Vercel Hobby, cron jobs must run at most once per day. If you need higher-frequency lineups/live updates, use Supabase `pg_cron` (or upgrade to Vercel Pro).
 
 ### Supabase Cron (pg_cron)
 
@@ -96,7 +98,7 @@ If you prefer Supabase scheduling, run SQL in Supabase SQL Editor:
 ```sql
 select cron.schedule(
 	'ipl-sync-fixtures',
-	'0 */24 * * *',
+	'0 0 * * *',
 	$$
 	select net.http_get(
 		url := 'https://namma-11.vercel.app/api/cron/sync-fixtures?secret=' || current_setting('app.settings.cron_secret', true)

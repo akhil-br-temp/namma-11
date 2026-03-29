@@ -7,15 +7,15 @@
     },
     {
       "path": "/api/cron/sync-squads",
-      "schedule": "0 */6 * * *"
+      "schedule": "15 0 * * *"
     },
     {
       "path": "/api/cron/sync-lineups",
-      "schedule": "*/30 * * * *"
+      "schedule": "30 0 * * *"
     },
     {
       "path": "/api/cron/live-score",
-      "schedule": "* * * * *"
+      "schedule": "45 0 * * *"
     }
   ]
 }
