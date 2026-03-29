@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/sync-fixtures",
+      "schedule": "0 */24 * * *"
+    },
+    {
+      "path": "/api/cron/sync-lineups",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/live-score",
+      "schedule": "* * * * *"
+    }
+  ]
+}

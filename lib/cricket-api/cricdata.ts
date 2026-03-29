@@ -104,23 +104,37 @@ function extractArray(payload: unknown): Dictionary[] {
 }
 
 function normalizeMatch(record: Dictionary, provider: "cricdata" | "entitysport"): ProviderMatch | null {
+  const recordName = toStringSafe(record.name);
   const apiMatchId =
     toStringSafe(record.id) ||
     toStringSafe(record.match_id) ||
     toStringSafe(record.unique_id) ||
     toStringSafe(record.key);
 
+  const teamInfo = Array.isArray(record.teamInfo)
+    ? record.teamInfo.filter((entry): entry is Dictionary => typeof entry === "object" && entry !== null)
+    : [];
+
+  const firstTeamInfo = teamInfo[0];
+  const secondTeamInfo = teamInfo[1];
+
+  const nameVsParts = recordName.split(/\svs\s/i).map((part) => part.trim());
+
   const teamAName =
+    toStringSafe(firstTeamInfo?.name) ||
     toStringSafe(record.teamA) ||
     toStringSafe(record.team_a) ||
     toStringSafe(record.team1) ||
-    toStringSafe(record.team_1);
+    toStringSafe(record.team_1) ||
+    toStringSafe(nameVsParts[0]);
 
   const teamBName =
+    toStringSafe(secondTeamInfo?.name) ||
     toStringSafe(record.teamB) ||
     toStringSafe(record.team_b) ||
     toStringSafe(record.team2) ||
-    toStringSafe(record.team_2);
+    toStringSafe(record.team_2) ||
+    toStringSafe(nameVsParts[1]);
 
   if (!apiMatchId || !teamAName || !teamBName) {
     return null;
@@ -148,14 +162,14 @@ function normalizeMatch(record: Dictionary, provider: "cricdata" | "entitysport"
     provider,
     apiMatchId,
     teamA: {
-      id: toStringSafe(record.team_a_id) || teamAShort,
+      id: toStringSafe(firstTeamInfo?.id) || toStringSafe(record.team_a_id) || teamAShort,
       name: teamAName,
-      shortName: teamAShort,
+      shortName: toStringSafe(firstTeamInfo?.shortname) || toStringSafe(firstTeamInfo?.shortName) || teamAShort,
     },
     teamB: {
-      id: toStringSafe(record.team_b_id) || teamBShort,
+      id: toStringSafe(secondTeamInfo?.id) || toStringSafe(record.team_b_id) || teamBShort,
       name: teamBName,
-      shortName: teamBShort,
+      shortName: toStringSafe(secondTeamInfo?.shortname) || toStringSafe(secondTeamInfo?.shortName) || teamBShort,
     },
     matchDate,
     venue,
@@ -203,10 +217,9 @@ async function fetchWithRetry(url: string, retries: number): Promise<unknown> {
 }
 
 async function fetchFromProvider(config: ProviderConfig): Promise<ProviderResponse<ProviderMatch>> {
-  const leagueParam = "ipl";
   const endpoint =
     config.name === "cricdata"
-      ? `${config.baseUrl}/matches?apikey=${encodeURIComponent(config.apiKey)}&offset=0&type=${leagueParam}`
+      ? `${config.baseUrl}/matches?apikey=${encodeURIComponent(config.apiKey)}&offset=0`
       : `${config.baseUrl}/matches?token=${encodeURIComponent(config.apiKey)}&per_page=50&series=ipl`;
 
   const payload = await fetchWithRetry(endpoint, 2);
@@ -215,9 +228,17 @@ async function fetchFromProvider(config: ProviderConfig): Promise<ProviderRespon
     .map((entry) => normalizeMatch(entry, config.name))
     .filter((entry): entry is ProviderMatch => entry !== null);
 
+  const iplLikeMatches =
+    config.name === "cricdata"
+      ? normalized.filter((match) => {
+          const combined = `${match.teamA.name} ${match.teamB.name}`.toLowerCase();
+          return combined.includes("indians") || combined.includes("super kings") || combined.includes("royal challengers") || combined.includes("knight riders") || combined.includes("sunrisers") || combined.includes("titans") || combined.includes("capitals") || combined.includes("punjab") || combined.includes("rajasthan") || combined.includes("lucknow") || combined.includes("ipl");
+        })
+      : normalized;
+
   return {
     provider: config.name,
-    records: normalized,
+    records: iplLikeMatches,
   };
 }
 
@@ -311,7 +332,7 @@ export async function getUpcomingMatches(): Promise<ProviderResponse<ProviderMat
     providers.push({
       name: "cricdata",
       apiKey: cricdataKey,
-      baseUrl: "https://api.cricdata.org/v1",
+      baseUrl: "https://api.cricapi.com/v1",
     });
   }
 
@@ -350,7 +371,7 @@ export async function getPlayingXI(apiMatchId: string): Promise<ProviderLineup> 
     providers.push({
       name: "cricdata",
       apiKey: cricdataKey,
-      baseUrl: "https://api.cricdata.org/v1",
+      baseUrl: "https://api.cricapi.com/v1",
     });
   }
 

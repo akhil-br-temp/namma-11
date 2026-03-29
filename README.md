@@ -44,6 +44,86 @@ Initial schema migration is in:
 
 Apply it using Supabase CLI in your linked project.
 
+## Cron Endpoints
+
+Protected cron routes (all require `CRON_SECRET`):
+
+- `/api/cron/sync-fixtures` -> sync IPL fixtures and teams
+- `/api/cron/sync-lineups` -> poll playing XI and set lock windows
+- `/api/cron/live-score` -> advance match statuses and lock teams by lock time
+
+## CricketData API Notes
+
+- This app uses CricketData/CricAPI host: `https://api.cricapi.com/v1`
+- `CRICDATA_API_KEY` must be the API key from developer console.
+- Your CricketData website login password is not used in API requests.
+
+### Manual Run (Local or Production)
+
+Use Bearer auth header with your cron secret:
+
+```bash
+curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/sync-fixtures
+curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/sync-lineups
+curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/live-score
+```
+
+You can also call via query param when testing quickly:
+
+```bash
+https://namma-11.vercel.app/api/cron/sync-fixtures?secret=<CRON_SECRET>
+```
+
+## Cron Setup
+
+### Vercel Cron
+
+1. Ensure `CRON_SECRET` is added in Vercel Project -> Settings -> Environment Variables.
+2. Deploy this repo with `vercel.json` included.
+3. Vercel will schedule:
+	 - fixtures: every 24h
+	 - lineups: every 30m
+	 - live-score pipeline: every minute
+4. Check runs in Vercel Dashboard -> Functions -> Cron Jobs.
+
+### Supabase Cron (pg_cron)
+
+If you prefer Supabase scheduling, run SQL in Supabase SQL Editor:
+
+```sql
+select cron.schedule(
+	'ipl-sync-fixtures',
+	'0 */24 * * *',
+	$$
+	select net.http_get(
+		url := 'https://namma-11.vercel.app/api/cron/sync-fixtures?secret=' || current_setting('app.settings.cron_secret', true)
+	);
+	$$
+);
+
+select cron.schedule(
+	'ipl-sync-lineups',
+	'*/30 * * * *',
+	$$
+	select net.http_get(
+		url := 'https://namma-11.vercel.app/api/cron/sync-lineups?secret=' || current_setting('app.settings.cron_secret', true)
+	);
+	$$
+);
+
+select cron.schedule(
+	'ipl-live-score',
+	'* * * * *',
+	$$
+	select net.http_get(
+		url := 'https://namma-11.vercel.app/api/cron/live-score?secret=' || current_setting('app.settings.cron_secret', true)
+	);
+	$$
+);
+```
+
+If you do not store `cron_secret` in DB settings, replace it directly in URL for initial setup.
+
 ## Next Implementation Steps
 
 - Add actual auth callbacks and profile onboarding
