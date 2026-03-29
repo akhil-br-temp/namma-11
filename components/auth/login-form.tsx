@@ -32,6 +32,51 @@ export function LoginForm() {
     router.refresh();
   };
 
+  const onEmailSignup = async () => {
+    setLoading(true);
+    setMessage(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setMessage("Account created. Check your inbox to confirm your email.");
+    setLoading(false);
+  };
+
+  const onMagicLink = async () => {
+    setLoading(true);
+    setMessage(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setMessage("Magic link sent. Check your inbox.");
+    setLoading(false);
+  };
+
   const onGoogleLogin = async () => {
     setLoading(true);
     setMessage(null);
@@ -99,6 +144,24 @@ export function LoginForm() {
           className="w-full rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-teal-50 transition hover:bg-teal-800 disabled:opacity-60"
         >
           {loading ? "Signing in..." : "Sign in"}
+        </button>
+
+        <button
+          type="button"
+          disabled={loading || !email || password.length < 6}
+          onClick={onEmailSignup}
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+        >
+          Create account with email
+        </button>
+
+        <button
+          type="button"
+          disabled={loading || !email}
+          onClick={onMagicLink}
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+        >
+          Send magic link
         </button>
       </form>
 
