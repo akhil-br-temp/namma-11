@@ -1,4 +1,4 @@
-import { ProviderLineup, ProviderLineupPlayer, ProviderMatch, ProviderResponse } from "@/lib/cricket-api/types";
+import { ProviderLineup, ProviderLineupPlayer, ProviderMatch, ProviderResponse, ProviderScorecard } from "@/lib/cricket-api/types";
 
 type Dictionary = Record<string, unknown>;
 
@@ -544,4 +544,54 @@ export async function getPlayingXI(apiMatchId: string): Promise<ProviderLineup> 
     announced: false,
     players: [],
   };
+}
+
+export async function getMatchScorecard(apiMatchId: string): Promise<ProviderScorecard> {
+  const cricdataKey = process.env.CRICDATA_API_KEY;
+  const entitySportKey = process.env.ENTITY_SPORT_API_KEY;
+
+  if (!cricdataKey && !entitySportKey) {
+    throw new Error("Neither CRICDATA_API_KEY nor ENTITY_SPORT_API_KEY is configured");
+  }
+
+  const providers: ProviderConfig[] = [];
+
+  if (cricdataKey) {
+    providers.push({
+      name: "cricdata",
+      apiKey: cricdataKey,
+      baseUrl: "https://api.cricapi.com/v1",
+    });
+  }
+
+  if (entitySportKey) {
+    providers.push({
+      name: "entitysport",
+      apiKey: entitySportKey,
+      baseUrl: "https://rest.entitysport.com/v2",
+    });
+  }
+
+  let lastError: Error | null = null;
+
+  for (const provider of providers) {
+    try {
+      const endpoint =
+        provider.name === "cricdata"
+          ? `${provider.baseUrl}/match_scorecard?apikey=${encodeURIComponent(provider.apiKey)}&id=${encodeURIComponent(apiMatchId)}`
+          : `${provider.baseUrl}/matches/${encodeURIComponent(apiMatchId)}/scorecard?token=${encodeURIComponent(provider.apiKey)}`;
+
+      const payload = await fetchWithRetry(endpoint, 2);
+
+      return {
+        provider: provider.name,
+        apiMatchId,
+        payload,
+      };
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("Unknown provider scorecard error");
+    }
+  }
+
+  throw lastError ?? new Error("Unable to fetch scorecard from configured providers");
 }

@@ -42,7 +42,7 @@ export async function GET(_: Request, { params }: MatchParams) {
   const { data: matchPlayers, error: matchPlayersError } = await supabase
     .from("match_players")
     .select(
-      "is_playing, is_impact_player, is_concussion_substitute, fantasy_points, player:players(id, name, role, credit_value, is_overseas, ipl_team_id, team:ipl_teams!players_ipl_team_id_fkey(name, short_name))"
+      "is_playing, is_impact_player, is_concussion_substitute, fantasy_points, player:players(id, name, role, credit_value, is_overseas, photo_url, ipl_team_id, team:ipl_teams!players_ipl_team_id_fkey(name, short_name))"
     )
     .eq("match_id", id);
 
@@ -66,6 +66,7 @@ export async function GET(_: Request, { params }: MatchParams) {
           role: player.role,
           creditValue: player.credit_value,
           isOverseas: player.is_overseas,
+          photoUrl: player.photo_url,
           team,
           isPlaying: entry.is_playing,
           isImpactPlayer: entry.is_impact_player,
@@ -80,7 +81,7 @@ export async function GET(_: Request, { params }: MatchParams) {
 
   const { data: fallbackPlayers, error: fallbackError } = await supabase
     .from("players")
-    .select("id, name, role, credit_value, is_overseas, team:ipl_teams!players_ipl_team_id_fkey(name, short_name)")
+    .select("id, name, role, credit_value, is_overseas, photo_url, team:ipl_teams!players_ipl_team_id_fkey(name, short_name)")
     .in("ipl_team_id", [matchRow.team_a_id, matchRow.team_b_id]);
 
   if (fallbackError) {
@@ -93,6 +94,7 @@ export async function GET(_: Request, { params }: MatchParams) {
     role: entry.role,
     creditValue: entry.credit_value,
     isOverseas: entry.is_overseas,
+    photoUrl: entry.photo_url,
     team: firstObject(entry.team),
     isPlaying: false,
     isImpactPlayer: false,

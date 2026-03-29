@@ -78,9 +78,9 @@ export default async function MatchesPage() {
             className="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300"
           >
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center -space-x-2">
-                  <div className="relative h-8 w-8 rounded-full border-2 border-white bg-slate-100 p-1">
+              <div className="flex flex-1 items-center justify-between gap-2 mr-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative h-10 w-10 rounded-full bg-slate-100 p-1">
                     <Image
                       src={getTeamLogo(match.team_a?.short_name)}
                       alt={match.team_a?.name ?? "Team A"}
@@ -88,7 +88,14 @@ export default async function MatchesPage() {
                       className="object-contain p-1"
                     />
                   </div>
-                  <div className="relative h-8 w-8 rounded-full border-2 border-white bg-slate-100 p-1">
+                  <span className="font-bold text-slate-900">{match.team_a?.short_name ?? "T1"}</span>
+                </div>
+
+                <span className="text-[10px] font-black tracking-widest text-slate-400">VS</span>
+
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-slate-900">{match.team_b?.short_name ?? "T2"}</span>
+                  <div className="relative h-10 w-10 rounded-full bg-slate-100 p-1">
                     <Image
                       src={getTeamLogo(match.team_b?.short_name)}
                       alt={match.team_b?.name ?? "Team B"}
@@ -97,9 +104,6 @@ export default async function MatchesPage() {
                     />
                   </div>
                 </div>
-                <h3 className="font-semibold text-slate-900">
-                  {match.team_a?.short_name ?? "T1"} vs {match.team_b?.short_name ?? "T2"}
-                </h3>
               </div>
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusStyle(match.status)}`}>
                 {match.status}

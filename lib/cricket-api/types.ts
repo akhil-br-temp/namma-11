@@ -37,3 +37,9 @@ export interface ProviderLineup {
   announced: boolean;
   players: ProviderLineupPlayer[];
 }
+
+export interface ProviderScorecard {
+  provider: ProviderName;
+  apiMatchId: string;
+  payload: unknown;
+}
