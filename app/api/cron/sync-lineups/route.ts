@@ -142,7 +142,8 @@ export async function GET(request: NextRequest) {
       }
 
       const isAlreadyAnnounced = match.status === "lineup_announced";
-      const lockTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      // Lock teams at match start time (match_date), not 30 min after lineup announcement
+      const lockTime = match.match_date;
 
       const { error: updateMatchError } = await admin
         .from("matches")

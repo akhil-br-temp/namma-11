@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isCronAuthorized } from "@/lib/api/cron-auth";
-import { runFixtureSync } from "@/lib/jobs/sync-fixtures";
+import { runSquadSync } from "@/lib/jobs/sync-squads";
 
 export async function GET(request: NextRequest) {
   if (!isCronAuthorized(request)) {
@@ -8,10 +8,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await runFixtureSync();
+    const result = await runSquadSync();
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected fixture sync error";
+    const message = error instanceof Error ? error.message : "Unexpected squad sync error";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

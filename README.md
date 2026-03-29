@@ -49,6 +49,7 @@ Apply it using Supabase CLI in your linked project.
 Protected cron routes (all require `CRON_SECRET`):
 
 - `/api/cron/sync-fixtures` -> sync IPL fixtures and teams
+- `/api/cron/sync-squads` -> sync full match squads into `players` and `match_players`
 - `/api/cron/sync-lineups` -> poll playing XI and set lock windows
 - `/api/cron/live-score` -> advance match statuses and lock teams by lock time
 
@@ -64,6 +65,7 @@ Use Bearer auth header with your cron secret:
 
 ```bash
 curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/sync-fixtures
+curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/sync-squads
 curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/sync-lineups
 curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/live-score
 ```
@@ -82,6 +84,7 @@ https://namma-11.vercel.app/api/cron/sync-fixtures?secret=<CRON_SECRET>
 2. Deploy this repo with `vercel.json` included.
 3. Vercel will schedule:
 	 - fixtures: every 24h
+	 - squads: every 6h
 	 - lineups: every 30m
 	 - live-score pipeline: every minute
 4. Check runs in Vercel Dashboard -> Functions -> Cron Jobs.

@@ -103,6 +103,38 @@ function extractArray(payload: unknown): Dictionary[] {
   return [];
 }
 
+function extractObject(payload: unknown): Dictionary | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const root = payload as Dictionary;
+  if (root.data && typeof root.data === "object" && !Array.isArray(root.data)) {
+    return root.data as Dictionary;
+  }
+  if (root.response && typeof root.response === "object" && !Array.isArray(root.response)) {
+    return root.response as Dictionary;
+  }
+
+  return root;
+}
+
+function isLikelyIplTeamName(value: string): boolean {
+  const name = value.toLowerCase();
+  return (
+    name.includes("mumbai indians") ||
+    name.includes("chennai super kings") ||
+    name.includes("royal challengers") ||
+    name.includes("kolkata knight riders") ||
+    name.includes("sunrisers") ||
+    name.includes("gujarat titans") ||
+    name.includes("delhi capitals") ||
+    name.includes("punjab kings") ||
+    name.includes("rajasthan royals") ||
+    name.includes("lucknow super giants")
+  );
+}
+
 function normalizeMatch(record: Dictionary, provider: "cricdata" | "entitysport"): ProviderMatch | null {
   const recordName = toStringSafe(record.name);
   const apiMatchId =
@@ -230,16 +262,108 @@ async function fetchFromProvider(config: ProviderConfig): Promise<ProviderRespon
 
   const iplLikeMatches =
     config.name === "cricdata"
-      ? normalized.filter((match) => {
-          const combined = `${match.teamA.name} ${match.teamB.name}`.toLowerCase();
-          return combined.includes("indians") || combined.includes("super kings") || combined.includes("royal challengers") || combined.includes("knight riders") || combined.includes("sunrisers") || combined.includes("titans") || combined.includes("capitals") || combined.includes("punjab") || combined.includes("rajasthan") || combined.includes("lucknow") || combined.includes("ipl");
-        })
+      ? normalized.filter((match) => isLikelyIplTeamName(match.teamA.name) || isLikelyIplTeamName(match.teamB.name))
       : normalized;
 
   return {
     provider: config.name,
     records: iplLikeMatches,
   };
+}
+
+async function fetchCricApiSeries(apiKey: string, search: string): Promise<Dictionary[]> {
+  const endpoint = `https://api.cricapi.com/v1/series?apikey=${encodeURIComponent(apiKey)}&offset=0&search=${encodeURIComponent(search)}`;
+  const payload = await fetchWithRetry(endpoint, 2);
+  return extractArray(payload);
+}
+
+function findIpl2026SeriesId(seriesRows: Dictionary[]): string | null {
+  const preferred = seriesRows.find((row) => {
+    const name = toStringSafe(row.name).toLowerCase();
+    return name.includes("indian premier league") && name.includes("2026");
+  });
+
+  if (preferred) {
+    return toStringSafe(preferred.id) || null;
+  }
+
+  const fallback = seriesRows.find((row) => {
+    const name = toStringSafe(row.name).toLowerCase();
+    return name.includes("ipl") && name.includes("2026");
+  });
+
+  return fallback ? toStringSafe(fallback.id) || null : null;
+}
+
+async function fetchSeriesMatches(apiKey: string, seriesId: string): Promise<ProviderMatch[]> {
+  const endpoint = `https://api.cricapi.com/v1/series_info?apikey=${encodeURIComponent(apiKey)}&offset=0&id=${encodeURIComponent(seriesId)}`;
+  const payload = await fetchWithRetry(endpoint, 2);
+  const details = extractObject(payload);
+
+  if (!details) {
+    return [];
+  }
+
+  const directMatchList = Array.isArray(details.matchList)
+    ? details.matchList
+    : Array.isArray(details.matches)
+      ? details.matches
+      : [];
+
+  const rows = directMatchList.filter((entry): entry is Dictionary => typeof entry === "object" && entry !== null);
+
+  return rows
+    .map((entry) => normalizeMatch(entry, "cricdata"))
+    .filter((entry): entry is ProviderMatch => entry !== null);
+}
+
+async function fetchIpl2026ByPagination(apiKey: string): Promise<ProviderMatch[]> {
+  const allMatches: ProviderMatch[] = [];
+
+  for (let offset = 0; offset <= 400; offset += 25) {
+    const endpoint = `https://api.cricapi.com/v1/matches?apikey=${encodeURIComponent(apiKey)}&offset=${offset}`;
+    const payload = await fetchWithRetry(endpoint, 2);
+    const rows = extractArray(payload);
+
+    if (rows.length === 0) {
+      break;
+    }
+
+    const normalized = rows
+      .map((entry) => normalizeMatch(entry, "cricdata"))
+      .filter((entry): entry is ProviderMatch => entry !== null);
+
+    const filtered = normalized.filter((match) => {
+      const year = new Date(match.matchDate).getUTCFullYear();
+      return year === 2026 && (isLikelyIplTeamName(match.teamA.name) || isLikelyIplTeamName(match.teamB.name));
+    });
+
+    allMatches.push(...filtered);
+  }
+
+  const uniqueByApiId = new Map<string, ProviderMatch>();
+  allMatches.forEach((match) => uniqueByApiId.set(match.apiMatchId, match));
+  return Array.from(uniqueByApiId.values());
+}
+
+async function fetchIpl2026Matches(apiKey: string): Promise<ProviderMatch[]> {
+  const seriesCandidates = ["IPL 2026", "Indian Premier League 2026", "IPL"];
+  let seriesRows: Dictionary[] = [];
+
+  for (const query of seriesCandidates) {
+    const rows = await fetchCricApiSeries(apiKey, query);
+    seriesRows = [...seriesRows, ...rows];
+  }
+
+  const seriesId = findIpl2026SeriesId(seriesRows);
+  if (seriesId) {
+    const bySeries = await fetchSeriesMatches(apiKey, seriesId);
+    if (bySeries.length > 0) {
+      return bySeries;
+    }
+  }
+
+  return fetchIpl2026ByPagination(apiKey);
 }
 
 function normalizeLineupPlayers(records: Dictionary[]): ProviderLineupPlayer[] {
@@ -345,6 +469,20 @@ export async function getUpcomingMatches(): Promise<ProviderResponse<ProviderMat
   }
 
   let lastError: Error | null = null;
+
+  if (cricdataKey) {
+    try {
+      const matches = await fetchIpl2026Matches(cricdataKey);
+      if (matches.length > 0) {
+        return {
+          provider: "cricdata",
+          records: matches,
+        };
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("Unknown CricketData series error");
+    }
+  }
 
   for (const provider of providers) {
     try {
