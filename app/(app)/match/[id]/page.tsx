@@ -1,6 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { TeamBuilder } from "@/components/match/team-builder";
+import { getTeamLogo } from "@/lib/utils";
 
 type MatchPageProps = {
   params: Promise<{ id: string }>;
@@ -108,12 +110,22 @@ export default async function MatchPage({ params }: MatchPageProps) {
         <div className="mt-3 space-y-2">
           {squadPlayers.map((player) => (
             <div key={player.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-sm">
-              <div>
-                <p className="font-semibold text-slate-900">{player.name}</p>
-                <p className="text-xs text-slate-600">
-                  {player.role} • {player.teamShortName}
-                  {player.isOverseas ? " • Overseas" : ""}
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="relative h-10 w-10 rounded-full bg-slate-100 p-1">
+                  <Image
+                    src={getTeamLogo(player.teamShortName)}
+                    alt={player.teamShortName}
+                    fill
+                    className="object-contain p-1"
+                  />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900">{player.name}</p>
+                  <p className="text-xs text-slate-600">
+                    {player.role} • {player.teamShortName}
+                    {player.isOverseas ? " • Overseas" : ""}
+                  </p>
+                </div>
               </div>
             </div>
           ))}

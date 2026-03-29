@@ -1,6 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { ManualSyncButton } from "@/components/matches/manual-sync-button";
+import { getTeamLogo } from "@/lib/utils";
 
 type Team = { name: string; short_name: string };
 
@@ -76,9 +78,29 @@ export default async function MatchesPage() {
             className="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300"
           >
             <div className="flex items-center justify-between gap-3">
-              <h3 className="font-semibold text-slate-900">
-                {match.team_a?.short_name ?? "T1"} vs {match.team_b?.short_name ?? "T2"}
-              </h3>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center -space-x-2">
+                  <div className="relative h-8 w-8 rounded-full border-2 border-white bg-slate-100 p-1">
+                    <Image
+                      src={getTeamLogo(match.team_a?.short_name)}
+                      alt={match.team_a?.name ?? "Team A"}
+                      fill
+                      className="object-contain p-1"
+                    />
+                  </div>
+                  <div className="relative h-8 w-8 rounded-full border-2 border-white bg-slate-100 p-1">
+                    <Image
+                      src={getTeamLogo(match.team_b?.short_name)}
+                      alt={match.team_b?.name ?? "Team B"}
+                      fill
+                      className="object-contain p-1"
+                    />
+                  </div>
+                </div>
+                <h3 className="font-semibold text-slate-900">
+                  {match.team_a?.short_name ?? "T1"} vs {match.team_b?.short_name ?? "T2"}
+                </h3>
+              </div>
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusStyle(match.status)}`}>
                 {match.status}
               </span>

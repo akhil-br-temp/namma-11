@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { getTeamLogo } from "@/lib/utils";
 
 type LeagueOption = {
   id: string;
@@ -50,6 +52,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
   const [teamName, setTeamName] = useState("My XI");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [syncingSquad, setSyncingSquad] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,31 +61,31 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
     return new Date() >= new Date(matchData.match_date);
   }, [matchData]);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      setMessage(null);
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setMessage(null);
 
-      try {
-        const response = await fetch(`/api/match/${matchId}/players`, { cache: "no-store" });
-        const payload = (await response.json()) as { error?: string; match?: MatchData; players?: Player[] };
+    try {
+      const response = await fetch(`/api/match/${matchId}/players`, { cache: "no-store" });
+      const payload = (await response.json()) as { error?: string; match?: MatchData; players?: Player[] };
 
-        if (!response.ok) {
-          throw new Error(payload.error ?? "Unable to load players");
-        }
-
-        setPlayers(payload.players ?? []);
-        setMatchData(payload.match ?? null);
-      } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Unable to load players");
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Unable to load players");
       }
-    };
 
-    void loadData();
+      setPlayers(payload.players ?? []);
+      setMatchData(payload.match ?? null);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load players");
+    } finally {
+      setLoading(false);
+    }
   }, [matchId]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   useEffect(() => {
     const loadExistingTeam = async () => {
@@ -200,7 +203,10 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
         }),
       });
 
-      const payload = (await response.json()) as { error?: string };
+      const payload = (await response.json()) as {
+        error?: string;
+        squads?: { preloadedMatchPlayers?: number; upsertedMatchPlayers?: number };
+      };
 
       if (!response.ok) {
         throw new Error(payload.error ?? "Unable to save team");
@@ -211,6 +217,35 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save team");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const syncSquadNow = async () => {
+    setSyncingSquad(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/admin/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const payload = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Unable to sync squad");
+      }
+
+      await loadData();
+      setMessage(
+        `Squad synced. Refreshed players (${payload.squads?.upsertedMatchPlayers ?? 0} squad rows, ${
+          payload.squads?.preloadedMatchPlayers ?? 0
+        } default preload rows).`
+      );
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "Unable to sync squad");
+    } finally {
+      setSyncingSquad(false);
     }
   };
 
@@ -360,7 +395,19 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
       <article className="rounded-2xl border border-slate-200 bg-white p-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Players</h3>
         {loading ? <p className="mt-2 text-sm text-slate-600">Loading players...</p> : null}
-        {!loading && players.length === 0 ? <p className="mt-2 text-sm text-slate-600">No players available yet. Sync squad/match players first.</p> : null}
+        {!loading && players.length === 0 ? (
+          <div className="mt-2 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <p className="text-sm text-amber-900">No players available yet. Sync squad/match players first.</p>
+            <button
+              type="button"
+              onClick={syncSquadNow}
+              disabled={syncingSquad}
+              className="inline-flex items-center rounded-lg bg-amber-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {syncingSquad ? "Syncing squad..." : "Sync squad now"}
+            </button>
+          </div>
+        ) : null}
 
         <div className="mt-3 space-y-2">
           {players.map((player) => {
@@ -372,26 +419,38 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
                   checked ? "border-teal-500 bg-teal-50" : "border-slate-200 bg-white"
                 } ${isTeamLocked ? "cursor-not-allowed opacity-75" : ""}`}
               >
-                <div className="flex items-center gap-2">
-                  {/* Player Status Indicators */}
-                  {player.isPlaying ? (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white text-xs font-bold">
-                      ✓
-                    </div>
-                  ) : player.isImpactPlayer ? (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-white text-xs font-bold">
-                      ⚡
-                    </div>
-                  ) : (
-                    <div className="h-5 w-5 rounded-full bg-slate-300" />
-                  )}
+                <div className="flex items-center gap-3">
+                  {/* Team Logo */}
+                  <div className="relative h-10 w-10 shrink-0 rounded-full bg-slate-100 p-1">
+                    <Image
+                      src={getTeamLogo(player.team?.short_name)}
+                      alt={player.team?.short_name ?? "TBD"}
+                      fill
+                      className="object-contain p-1"
+                    />
+                  </div>
                   
-                  <div>
-                    <p className="font-semibold text-slate-900">{player.name}</p>
-                    <p className="text-xs text-slate-600">
-                      {player.role} • {player.team?.short_name ?? "TBD"} • {player.creditValue.toFixed(1)} credits
-                      {player.isOverseas ? " • Overseas" : ""}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    {/* Player Status Indicators */}
+                    {player.isPlaying ? (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white text-xs font-bold">
+                        ✓
+                      </div>
+                    ) : player.isImpactPlayer ? (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-white text-xs font-bold">
+                        ⚡
+                      </div>
+                    ) : (
+                      <div className="h-5 w-5 rounded-full bg-slate-300" />
+                    )}
+                    
+                    <div>
+                      <p className="font-semibold text-slate-900">{player.name}</p>
+                      <p className="text-xs text-slate-600">
+                        {player.role} • {player.team?.short_name ?? "TBD"} • {player.creditValue.toFixed(1)} credits
+                        {player.isOverseas ? " • Overseas" : ""}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <input

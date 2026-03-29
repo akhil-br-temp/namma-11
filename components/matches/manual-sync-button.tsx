@@ -4,7 +4,13 @@ import { useState } from "react";
 
 type SyncPayload = {
   fixtures?: { syncedTeams?: number; syncedMatches?: number };
-  squads?: { syncedMatches?: number; upsertedPlayers?: number; upsertedMatchPlayers?: number };
+  squads?: {
+    syncedMatches?: number;
+    upsertedPlayers?: number;
+    upsertedMatchPlayers?: number;
+    preloadedMatches?: number;
+    preloadedMatchPlayers?: number;
+  };
   error?: string;
 };
 
@@ -37,7 +43,7 @@ export function ManualSyncButton() {
       setMessage(
         `Sync complete: ${fixtures?.syncedMatches ?? 0} fixtures, ${squads?.upsertedPlayers ?? 0} players, ${
           squads?.upsertedMatchPlayers ?? 0
-        } match-player rows.`
+        } squad rows, ${squads?.preloadedMatchPlayers ?? 0} default preload rows.`
       );
     } catch (syncError) {
       setError(syncError instanceof Error ? syncError.message : "Sync failed");
