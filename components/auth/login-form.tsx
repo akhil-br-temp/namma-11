@@ -13,10 +13,12 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const nextPath = useMemo(() => searchParams.get("next") ?? "/dashboard", [searchParams]);
+  const authError = useMemo(() => searchParams.get("authError"), [searchParams]);
   const callbackUrl = useMemo(() => {
     const base = window.location.origin;
     return `${base}/auth/callback?next=${encodeURIComponent(nextPath)}`;
   }, [nextPath]);
+  const visibleMessage = message ?? (authError ? `Magic link failed: ${authError}` : null);
 
   const onEmailLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,7 +43,7 @@ export function LoginForm() {
     setMessage(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -55,7 +57,36 @@ export function LoginForm() {
       return;
     }
 
-    setMessage("Account created. Check your inbox to confirm your email.");
+    if (data.session) {
+      router.replace(nextPath);
+      router.refresh();
+      return;
+    }
+
+    setMessage("Account created. Check your inbox for a confirmation link.");
+    setLoading(false);
+  };
+
+  const onResendConfirmation = async () => {
+    setLoading(true);
+    setMessage(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: callbackUrl,
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setMessage("Confirmation email re-sent. Check inbox and spam folders.");
     setLoading(false);
   };
 
@@ -167,9 +198,18 @@ export function LoginForm() {
         >
           Send magic link
         </button>
+
+        <button
+          type="button"
+          disabled={loading || !email}
+          onClick={onResendConfirmation}
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+        >
+          Resend confirmation email
+        </button>
       </form>
 
-      {message ? <p className="mt-3 text-sm text-rose-700">{message}</p> : null}
+      {visibleMessage ? <p className="mt-3 text-sm text-rose-700">{visibleMessage}</p> : null}
     </section>
   );
 }
