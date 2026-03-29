@@ -230,7 +230,10 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
-      const payload = (await response.json()) as { error?: string };
+      const payload = (await response.json()) as {
+        error?: string;
+        squads?: { upsertedMatchPlayers?: number; preloadedMatchPlayers?: number };
+      };
 
       if (!response.ok) {
         throw new Error(payload.error ?? "Unable to sync squad");
