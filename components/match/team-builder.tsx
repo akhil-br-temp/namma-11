@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
-import { getTeamLogo } from "@/lib/utils";
 
 type LeagueOption = {
   id: string;
@@ -66,34 +64,10 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-function PlayerAvatar({ name, photoUrl, teamShortName }: { name: string; photoUrl?: string | null; teamShortName?: string }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const hasPhoto = Boolean(photoUrl && !imageFailed);
-
-  if (hasPhoto) {
-    return (
-      <img
-        src={photoUrl ?? undefined}
-        alt={name}
-        className="h-10 w-10 rounded-full object-cover"
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() => setImageFailed(true)}
-      />
-    );
-  }
-
+function PlayerAvatar({ name }: { name: string }) {
   return (
-    <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-[11px] font-semibold text-slate-700">
-      {teamShortName ? (
-        <Image
-          src={getTeamLogo(teamShortName)}
-          alt={teamShortName}
-          fill
-          className="object-contain p-1 opacity-25"
-        />
-      ) : null}
-      <span className="relative z-10">{getInitials(name)}</span>
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700">
+      <span>{getInitials(name)}</span>
     </div>
   );
 }
@@ -118,22 +92,11 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
     return new Date() >= new Date(matchData.team_lock_time);
   }, [matchData?.team_lock_time]);
 
-  const teamTabs = useMemo(() => {
-    return Array.from(
-      new Set(players.map((player) => player.team?.short_name).filter((value): value is string => Boolean(value)))
-    ).slice(0, 2);
-  }, [players]);
-
   useEffect(() => {
-    if (teamTabs.length === 0) {
-      setActiveTab("all");
-      return;
+    if (!activeTab || (activeTab !== "players" && activeTab !== "cvc")) {
+      setActiveTab("players");
     }
-
-    if (!activeTab || (activeTab !== "cvc" && activeTab !== "all" && !teamTabs.includes(activeTab))) {
-      setActiveTab(teamTabs[0]);
-    }
-  }, [activeTab, teamTabs]);
+  }, [activeTab]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -227,9 +190,33 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
   }, [selectedPlayers]);
 
   const selectedCountByTeam = useCallback(
-    (shortName: string) => selectedPlayers.filter((player) => player.team?.short_name === shortName).length,
+    (shortName: string) => {
+      if (shortName === "UNASSIGNED") {
+        return selectedPlayers.filter((player) => !player.team?.short_name).length;
+      }
+
+      return selectedPlayers.filter((player) => player.team?.short_name === shortName).length;
+    },
     [selectedPlayers]
   );
+
+  const groupedPlayers = useMemo(() => {
+    const grouped = players.reduce((acc, player) => {
+      const key = player.team?.short_name ?? "UNASSIGNED";
+      const current = acc.get(key) ?? [];
+      current.push(player);
+      acc.set(key, current);
+      return acc;
+    }, new Map<string, Player[]>());
+
+    return Array.from(grouped.entries())
+      .map(([team, roster]) => [team, [...roster].sort((a, b) => a.name.localeCompare(b.name))] as const)
+      .sort(([teamA], [teamB]) => {
+        if (teamA === "UNASSIGNED") return 1;
+        if (teamB === "UNASSIGNED") return -1;
+        return teamA.localeCompare(teamB);
+      });
+  }, [players]);
 
   const togglePlayer = (playerId: string) => {
     if (isTeamLocked) {
@@ -413,18 +400,12 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
     }
   };
 
-  const playersInActiveTeam = useMemo(() => {
-    if (activeTab === "cvc") return [];
-    if (activeTab === "all") return players;
-    return players.filter((player) => player.team?.short_name === activeTab);
-  }, [activeTab, players]);
-
   return (
     <section className="space-y-4">
       {!isTeamLocked ? (
         <article className="rounded-2xl border border-slate-200 bg-white p-4">
           <h3 className="text-base font-bold text-slate-900">Build Your XI</h3>
-          <p className="mt-1 text-sm text-slate-600">Select by team tabs, then finalize Captain and Vice-Captain in C/VC.</p>
+          <p className="mt-1 text-sm text-slate-600">Select players from the two squad groups, then finalize Captain and Vice-Captain in C/VC.</p>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">
@@ -501,30 +482,15 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
 
       <article className="rounded-2xl border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap gap-2">
-          {teamTabs.length > 0
-            ? teamTabs.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                    activeTab === tab ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  {tab} ({selectedCountByTeam(tab)})
-                </button>
-              ))
-            : (
-              <button
-                type="button"
-                onClick={() => setActiveTab("all")}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                  activeTab === "all" ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                All players ({selectedIds.length})
-              </button>
-            )}
+          <button
+            type="button"
+            onClick={() => setActiveTab("players")}
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+              activeTab === "players" ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            Players
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab("cvc")}
@@ -552,43 +518,69 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
           </div>
         ) : null}
 
-        {!loading && players.length > 0 && activeTab !== "cvc" ? (
-          <div className="mt-3 space-y-2">
-            {playersInActiveTeam.map((player) => {
-              const checked = selectedIds.includes(player.id);
-              return (
-                <label
-                  key={player.id}
-                  className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 text-sm transition ${
-                    checked ? "border-teal-500 bg-teal-50" : "border-slate-200 bg-white"
-                  } ${isTeamLocked ? "cursor-not-allowed opacity-75" : ""}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <PlayerAvatar name={player.name} photoUrl={player.photoUrl} teamShortName={player.team?.short_name} />
-                    <div>
-                      <p className="font-semibold text-slate-900">{player.name}</p>
-                      <p className="text-xs text-slate-600">
-                        {player.role} • {player.team?.short_name ?? "TBD"} • {player.creditValue.toFixed(1)} credits
-                        {player.isOverseas ? " • Overseas" : ""}
-                      </p>
-                    </div>
+        {!loading && players.length > 0 && activeTab === "players" ? (
+          <div className="mt-3 space-y-3">
+            <p className="text-xs text-slate-600">Players are grouped by team for quicker scanning and selection.</p>
+
+            {groupedPlayers.some(([team]) => team === "UNASSIGNED") ? (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                Some players are missing team mapping and are shown under Unassigned Team. Run Sync squad now to refresh mappings.
+              </p>
+            ) : null}
+
+            <div className="grid gap-3 md:grid-cols-2">
+              {groupedPlayers.map(([teamShortName, roster]) => (
+                <section key={teamShortName} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-slate-900">
+                      {teamShortName === "UNASSIGNED" ? "Unassigned Team" : teamShortName}
+                    </h4>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600">
+                      {selectedCountByTeam(teamShortName)} selected
+                    </span>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => togglePlayer(player.id)}
-                    disabled={isTeamLocked}
-                    className="h-4 w-4 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </label>
-              );
-            })}
+
+                  <div className="mt-2 space-y-2">
+                    {roster.map((player) => {
+                      const checked = selectedIds.includes(player.id);
+
+                      return (
+                        <label
+                          key={player.id}
+                          className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 text-sm transition ${
+                            checked ? "border-teal-500 bg-teal-50" : "border-slate-200 bg-white"
+                          } ${isTeamLocked ? "cursor-not-allowed opacity-75" : ""}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <PlayerAvatar name={player.name} />
+                            <div>
+                              <p className="font-semibold text-slate-900">{player.name}</p>
+                              <p className="text-xs text-slate-600">
+                                {player.role} • {player.creditValue.toFixed(1)} credits
+                                {player.isOverseas ? " • Overseas" : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => togglePlayer(player.id)}
+                            disabled={isTeamLocked}
+                            className="h-4 w-4 disabled:cursor-not-allowed disabled:opacity-50"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
 
             {selectedIds.length === 11 ? (
               <button
                 type="button"
                 onClick={() => setActiveTab("cvc")}
-                className="mt-2 inline-flex rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+                className="inline-flex rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800"
               >
                 Continue to C/VC
               </button>
@@ -599,7 +591,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
         {!loading && players.length > 0 && activeTab === "cvc" ? (
           <div className="mt-3 space-y-3">
             {selectedPlayers.length === 0 ? (
-              <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Select players in team tabs first, then assign C and VC here.</p>
+              <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Select players in the squad lists first, then assign C and VC here.</p>
             ) : null}
 
             {selectedPlayers.map((player) => {
@@ -609,7 +601,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
               return (
                 <div key={player.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
                   <div className="flex items-center gap-3">
-                    <PlayerAvatar name={player.name} photoUrl={player.photoUrl} teamShortName={player.team?.short_name} />
+                    <PlayerAvatar name={player.name} />
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{player.name}</p>
                       <p className="text-xs text-slate-600">

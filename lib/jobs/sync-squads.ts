@@ -11,7 +11,7 @@ type MatchRow = {
   status: "upcoming" | "lineup_announced" | "live" | "completed";
 };
 
-type TeamApiRow = { id: string; api_team_id: string | null };
+type TeamApiRow = { id: string; api_team_id: string | null; name: string; short_name: string };
 
 type PlayerRow = {
   id: string;
@@ -29,6 +29,13 @@ type PlayerInput = {
 
 function toStringSafe(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function normalizeTeamKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 
 function normalizeRole(value: unknown): "WK" | "BAT" | "AR" | "BOWL" {
@@ -75,13 +82,25 @@ export async function runSquadSync() {
   const admin = createAdminClient();
   const now = Date.now();
 
-  const { data: teamRows, error: teamsError } = await admin.from("ipl_teams").select("id, api_team_id");
+  const { data: teamRows, error: teamsError } = await admin.from("ipl_teams").select("id, api_team_id, name, short_name");
   if (teamsError) throw teamsError;
 
-  const teamMap = new Map<string, string>();
+  const teamMapByApiId = new Map<string, string>();
+  const teamMapByName = new Map<string, string>();
+
   (teamRows ?? []).forEach((row: TeamApiRow) => {
     if (row.api_team_id) {
-      teamMap.set(row.api_team_id, row.id);
+      teamMapByApiId.set(row.api_team_id, row.id);
+    }
+
+    const normalizedName = normalizeTeamKey(row.name);
+    if (normalizedName) {
+      teamMapByName.set(normalizedName, row.id);
+    }
+
+    const normalizedShortName = normalizeTeamKey(row.short_name);
+    if (normalizedShortName) {
+      teamMapByName.set(normalizedShortName, row.id);
     }
   });
 
@@ -127,6 +146,7 @@ export async function runSquadSync() {
 
     for (const team of squadRows) {
       const teamName = toStringSafe(team.teamName);
+      const teamShortName = toStringSafe(team.shortName) || toStringSafe(team.shortname);
       const players = Array.isArray(team.players)
         ? team.players.filter((entry): entry is Dictionary => typeof entry === "object" && entry !== null)
         : [];
@@ -139,11 +159,17 @@ export async function runSquadSync() {
         }
 
         const teamApiId = toStringSafe(player.teamId) || toStringSafe(team.id);
+        const resolvedTeamId =
+          (teamApiId ? teamMapByApiId.get(teamApiId) : undefined) ??
+          (teamName ? teamMapByName.get(normalizeTeamKey(teamName)) : undefined) ??
+          (teamShortName ? teamMapByName.get(normalizeTeamKey(teamShortName)) : undefined) ??
+          null;
+
         playersInput.push({
           api_player_id: playerId,
           name: playerName,
           role: normalizeRole(player.role),
-          ipl_team_id: teamMap.get(teamApiId) ?? null,
+          ipl_team_id: resolvedTeamId,
           is_overseas: isOverseas(teamName, toStringSafe(player.country)),
           photo_url: toStringSafe(player.image) || null,
         });

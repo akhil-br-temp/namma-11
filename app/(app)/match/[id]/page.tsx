@@ -1,8 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { TeamBuilder } from "@/components/match/team-builder";
-import { getTeamLogo } from "@/lib/utils";
 
 type MatchPageProps = {
   params: Promise<{ id: string }>;
@@ -29,6 +27,16 @@ function getLeagueName(value: unknown): string {
   }
 
   return (value as { name?: string } | null)?.name ?? "Unnamed League";
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((part) => part.trim().charAt(0))
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 export default async function MatchPage({ params }: MatchPageProps) {
@@ -126,13 +134,8 @@ export default async function MatchPage({ params }: MatchPageProps) {
                   {players.map((player) => (
                     <div key={player.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-sm">
                       <div className="flex items-center gap-3">
-                        <div className="relative h-10 w-10 rounded-full bg-slate-100 p-1">
-                          <Image
-                            src={getTeamLogo(player.teamShortName)}
-                            alt={player.teamShortName}
-                            fill
-                            className="object-contain p-1"
-                          />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700">
+                          {getInitials(player.name)}
                         </div>
                         <div>
                           <p className="font-semibold text-slate-900">{player.name}</p>
