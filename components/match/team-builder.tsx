@@ -28,6 +28,7 @@ type Player = {
 type MatchData = {
   id: string;
   match_date: string;
+  team_lock_time: string | null;
 };
 
 type ExistingTeam = {
@@ -113,9 +114,9 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
   const [error, setError] = useState<string | null>(null);
 
   const isTeamLocked = useMemo(() => {
-    if (!matchData) return false;
-    return new Date() >= new Date(matchData.match_date);
-  }, [matchData]);
+    if (!matchData?.team_lock_time) return false;
+    return new Date() >= new Date(matchData.team_lock_time);
+  }, [matchData?.team_lock_time]);
 
   const teamTabs = useMemo(() => {
     return Array.from(
@@ -125,11 +126,11 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
 
   useEffect(() => {
     if (teamTabs.length === 0) {
-      setActiveTab("cvc");
+      setActiveTab("all");
       return;
     }
 
-    if (!activeTab || (activeTab !== "cvc" && !teamTabs.includes(activeTab))) {
+    if (!activeTab || (activeTab !== "cvc" && activeTab !== "all" && !teamTabs.includes(activeTab))) {
       setActiveTab(teamTabs[0]);
     }
   }, [activeTab, teamTabs]);
@@ -414,6 +415,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
 
   const playersInActiveTeam = useMemo(() => {
     if (activeTab === "cvc") return [];
+    if (activeTab === "all") return players;
     return players.filter((player) => player.team?.short_name === activeTab);
   }, [activeTab, players]);
 
@@ -499,18 +501,30 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
 
       <article className="rounded-2xl border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap gap-2">
-          {teamTabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                activeTab === tab ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
-            >
-              {tab} ({selectedCountByTeam(tab)})
-            </button>
-          ))}
+          {teamTabs.length > 0
+            ? teamTabs.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                    activeTab === tab ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  {tab} ({selectedCountByTeam(tab)})
+                </button>
+              ))
+            : (
+              <button
+                type="button"
+                onClick={() => setActiveTab("all")}
+                className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                  activeTab === "all" ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                All players ({selectedIds.length})
+              </button>
+            )}
           <button
             type="button"
             onClick={() => setActiveTab("cvc")}

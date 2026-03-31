@@ -93,6 +93,16 @@ export default async function MatchPage({ params }: MatchPageProps) {
     });
   }
 
+  const squadGroups = Array.from(
+    squadPlayers.reduce((grouped, player) => {
+      const teamKey = player.teamShortName || "TBD";
+      const existing = grouped.get(teamKey) ?? [];
+      existing.push(player);
+      grouped.set(teamKey, existing);
+      return grouped;
+    }, new Map<string, SquadPlayer[]>())
+  );
+
   return (
     <section className="space-y-3">
       {leagueOptions.length === 0 ? (
@@ -107,29 +117,38 @@ export default async function MatchPage({ params }: MatchPageProps) {
       <article className="rounded-2xl border border-slate-200 bg-white p-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Match Squad</h3>
         {squadPlayers.length === 0 ? <p className="mt-2 text-sm text-slate-600">Squad not synced yet. Run sync from the matches page.</p> : null}
-        <div className="mt-3 space-y-2">
-          {squadPlayers.map((player) => (
-            <div key={player.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-sm">
-              <div className="flex items-center gap-3">
-                <div className="relative h-10 w-10 rounded-full bg-slate-100 p-1">
-                  <Image
-                    src={getTeamLogo(player.teamShortName)}
-                    alt={player.teamShortName}
-                    fill
-                    className="object-contain p-1"
-                  />
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900">{player.name}</p>
-                  <p className="text-xs text-slate-600">
-                    {player.role} • {player.teamShortName}
-                    {player.isOverseas ? " • Overseas" : ""}
-                  </p>
+        {squadPlayers.length > 0 ? (
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {squadGroups.map(([teamShortName, players]) => (
+              <div key={teamShortName} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <h4 className="text-sm font-bold text-slate-900">{teamShortName}</h4>
+                <div className="mt-2 space-y-2">
+                  {players.map((player) => (
+                    <div key={player.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-10 w-10 rounded-full bg-slate-100 p-1">
+                          <Image
+                            src={getTeamLogo(player.teamShortName)}
+                            alt={player.teamShortName}
+                            fill
+                            className="object-contain p-1"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{player.name}</p>
+                          <p className="text-xs text-slate-600">
+                            {player.role}
+                            {player.isOverseas ? " • Overseas" : ""}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : null}
       </article>
 
       <Link href={`/match/${id}/live`} className="inline-flex rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-teal-50 hover:bg-teal-800">
