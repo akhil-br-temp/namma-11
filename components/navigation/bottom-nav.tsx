@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { HomeIcon, LeagueIcon, MatchesIcon, TeamIcon } from "@/components/ui/d11-icons";
 
 const items = [
-  { href: "/dashboard", label: "Home" },
-  { href: "/matches", label: "Matches" },
-  { href: "/my-teams", label: "My Teams" },
-  { href: "/league", label: "League" },
+  { href: "/dashboard", label: "Home", Icon: HomeIcon },
+  { href: "/matches", label: "Matches", Icon: MatchesIcon },
+  { href: "/my-teams", label: "My Teams", Icon: TeamIcon },
+  { href: "/league", label: "League", Icon: LeagueIcon },
 ];
 
 export function BottomNav() {
@@ -19,18 +20,18 @@ export function BottomNav() {
       <ul className="mx-auto flex h-16 w-full max-w-md items-center justify-around px-3">
         {items.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.Icon;
+
           return (
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}
-                className={cn(
-                  "flex h-11 items-center justify-center rounded-xl text-sm font-semibold transition",
-                  isActive
-                    ? "bg-gradient-to-r from-red-700 to-red-500 text-white shadow-[0_8px_24px_rgba(220,38,38,0.45)]"
-                    : "text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-100"
-                )}
+                className={cn("d11-nav-item", isActive && "is-active")}
               >
-                {item.label}
+                <span className="d11-nav-icon" aria-hidden>
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-[11px] font-semibold leading-none">{item.label}</span>
               </Link>
             </li>
           );

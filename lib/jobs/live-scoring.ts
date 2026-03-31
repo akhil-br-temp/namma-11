@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getMatchScorecard } from "@/lib/cricket-api/cricdata";
+import { getMatchScorecardForScoring } from "@/lib/cricket-api/scorecard-adapter";
 
 type Dictionary = Record<string, unknown>;
 
@@ -8,6 +8,8 @@ type MatchRow = {
   api_match_id: string;
   status: "upcoming" | "lineup_announced" | "live" | "completed";
   match_date: string;
+  team_a: { name: string; short_name: string } | { name: string; short_name: string }[] | null;
+  team_b: { name: string; short_name: string } | { name: string; short_name: string }[] | null;
 };
 
 type MatchPlayerRow = {
@@ -260,7 +262,9 @@ export async function runLiveScoringPipeline() {
 
   const { data: scoringMatches, error: scoringMatchesError } = await admin
     .from("matches")
-    .select("id, api_match_id, status, match_date")
+    .select(
+      "id, api_match_id, status, match_date, team_a:ipl_teams!matches_team_a_id_fkey(name, short_name), team_b:ipl_teams!matches_team_b_id_fkey(name, short_name)"
+    )
     .in("status", ["live", "lineup_announced", "completed"])
     .order("match_date", { ascending: false })
     .limit(30);
@@ -272,9 +276,22 @@ export async function runLiveScoringPipeline() {
   let updatedLeaderboardRows = 0;
 
   for (const match of (scoringMatches ?? []) as MatchRow[]) {
+    const teamA = firstObject(match.team_a);
+    const teamB = firstObject(match.team_b);
+    if (!teamA || !teamB) {
+      continue;
+    }
+
     let scorecardPayload: unknown;
     try {
-      const scorecard = await getMatchScorecard(match.api_match_id);
+      const scorecard = await getMatchScorecardForScoring({
+        apiMatchId: match.api_match_id,
+        matchDate: match.match_date,
+        teamAName: teamA.name,
+        teamBName: teamB.name,
+        teamAShortName: teamA.short_name,
+        teamBShortName: teamB.short_name,
+      });
       scorecardPayload = scorecard.payload;
     } catch {
       continue;

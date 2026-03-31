@@ -27,11 +27,25 @@ type PlayerInput = {
   photo_url: string | null;
 };
 
+type ExistingPlayerRow = {
+  id: string;
+  api_player_id: string;
+  normalized_name: string | null;
+  ipl_team_id: string | null;
+};
+
 function toStringSafe(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
 function normalizeTeamKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function normalizePlayerName(value: string): string {
   return value
     .trim()
     .toLowerCase()
@@ -71,6 +85,105 @@ async function fetchMatchSquad(apiKey: string, apiMatchId: string): Promise<Dict
   }
   const payload = await response.json();
   return parseSquadRows(payload);
+}
+
+async function reconcileSeededPlayers(
+  admin: ReturnType<typeof createAdminClient>,
+  players: PlayerInput[]
+): Promise<{ players: PlayerInput[]; promotedCount: number }> {
+  const teamIds = Array.from(
+    new Set(players.map((player) => player.ipl_team_id).filter((teamId): teamId is string => Boolean(teamId)))
+  );
+  const normalizedNames = Array.from(
+    new Set(players.map((player) => normalizePlayerName(player.name)).filter((name) => name.length > 0))
+  );
+
+  if (teamIds.length === 0 || normalizedNames.length === 0) {
+    return { players, promotedCount: 0 };
+  }
+
+  const { data: existingPlayers, error: existingPlayersError } = await admin
+    .from("players")
+    .select("id, api_player_id, normalized_name, ipl_team_id")
+    .in("ipl_team_id", teamIds)
+    .in("normalized_name", normalizedNames);
+
+  if (existingPlayersError) throw existingPlayersError;
+
+  const existingByKey = new Map<string, ExistingPlayerRow>();
+  ((existingPlayers ?? []) as ExistingPlayerRow[]).forEach((player) => {
+    if (!player.ipl_team_id || !player.normalized_name) return;
+    const key = `${player.ipl_team_id}:${player.normalized_name}`;
+    if (!existingByKey.has(key)) {
+      existingByKey.set(key, player);
+    }
+  });
+
+  const promotedRows: Array<{
+    id: string;
+    api_player_id: string;
+    name: string;
+    role: "WK" | "BAT" | "AR" | "BOWL";
+    is_overseas: boolean;
+    photo_url: string | null;
+    source_provider: string;
+    source_updated_at: string;
+  }> = [];
+  const reconciled: PlayerInput[] = [];
+  const providerTimestamp = new Date().toISOString();
+
+  players.forEach((player) => {
+    if (!player.ipl_team_id) {
+      reconciled.push(player);
+      return;
+    }
+
+    const key = `${player.ipl_team_id}:${normalizePlayerName(player.name)}`;
+    const existing = existingByKey.get(key);
+
+    if (!existing) {
+      reconciled.push(player);
+      return;
+    }
+
+    if (existing.api_player_id.startsWith("seed-ipl-") && existing.api_player_id !== player.api_player_id) {
+      promotedRows.push({
+        id: existing.id,
+        api_player_id: player.api_player_id,
+        name: player.name,
+        role: player.role,
+        is_overseas: player.is_overseas,
+        photo_url: player.photo_url,
+        source_provider: "cricdata",
+        source_updated_at: providerTimestamp,
+      });
+      reconciled.push(player);
+      return;
+    }
+
+    if (existing.api_player_id !== player.api_player_id) {
+      reconciled.push({
+        ...player,
+        api_player_id: existing.api_player_id,
+      });
+      return;
+    }
+
+    reconciled.push(player);
+  });
+
+  if (promotedRows.length > 0) {
+    const { error: promoteError } = await admin.from("players").upsert(promotedRows, { onConflict: "id" });
+    if (promoteError) throw promoteError;
+  }
+
+  const dedupByApiId = new Map<string, PlayerInput>();
+  reconciled.forEach((player) => dedupByApiId.set(player.api_player_id, player));
+
+  return {
+    players: Array.from(dedupByApiId.values()),
+    promotedCount: promotedRows.length,
+  };
 }
 
 export async function runSquadSync() {
@@ -127,6 +240,7 @@ export async function runSquadSync() {
   let syncedMatches = 0;
   let upsertedPlayers = 0;
   let upsertedMatchPlayers = 0;
+  let promotedSeededPlayers = 0;
   let preloadedMatches = 0;
   let preloadedMatchPlayers = 0;
 
@@ -182,9 +296,17 @@ export async function runSquadSync() {
 
     const dedupByApiId = new Map<string, PlayerInput>();
     playersInput.forEach((entry) => dedupByApiId.set(entry.api_player_id, entry));
-    const uniquePlayers = Array.from(dedupByApiId.values());
+    const { players: uniquePlayers, promotedCount } = await reconcileSeededPlayers(admin, Array.from(dedupByApiId.values()));
+    promotedSeededPlayers += promotedCount;
 
-    const { error: upsertPlayersError } = await admin.from("players").upsert(uniquePlayers, { onConflict: "api_player_id" });
+    const providerTimestamp = new Date().toISOString();
+    const providerPlayers = uniquePlayers.map((player) => ({
+      ...player,
+      source_provider: "cricdata",
+      source_updated_at: providerTimestamp,
+    }));
+
+    const { error: upsertPlayersError } = await admin.from("players").upsert(providerPlayers, { onConflict: "api_player_id" });
     if (upsertPlayersError) throw upsertPlayersError;
     upsertedPlayers += uniquePlayers.length;
 
@@ -283,6 +405,7 @@ export async function runSquadSync() {
     scannedMatches: targetMatches.length,
     syncedMatches,
     upsertedPlayers,
+    promotedSeededPlayers,
     upsertedMatchPlayers,
     preloadedMatches,
     preloadedMatchPlayers,

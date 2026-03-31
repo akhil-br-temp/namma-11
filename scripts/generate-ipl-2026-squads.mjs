@@ -25,14 +25,6 @@ function decodeHtml(value) {
     .trim();
 }
 
-function titleCaseName(value) {
-  return value
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => (part.length === 1 ? part.toUpperCase() : part[0].toUpperCase() + part.slice(1).toLowerCase()))
-    .join(" ");
-}
-
 function normalizeNationality(value) {
   const normalized = decodeHtml(value).trim();
   return normalized.length > 0 ? normalized : null;
@@ -83,7 +75,7 @@ function parseSquadCards(html) {
     const cardHtml = match[4] ?? "";
 
     cards.push({
-      name: titleCaseName(rawName),
+      name: rawName,
       role: roleFromCardHtml(cardHtml),
       profileUrl,
       iplPlayerId,
@@ -160,7 +152,7 @@ async function run() {
     teams: teamPayload,
   };
 
-  const output = `/* eslint-disable */\n// Generated via scripts/generate-ipl-2026-squads.mjs\n\nexport type SeedRole = \"WK\" | \"BAT\" | \"AR\" | \"BOWL\";\n\nexport type SeedPlayer = {\n  name: string;\n  role: SeedRole;\n  iplPlayerId: string;\n  profileUrl: string;\n  nationality: string | null;\n  isOverseas: boolean;\n};\n\nexport type SeedTeam = {\n  name: string;\n  shortName: string;\n  sourceUrl: string;\n  sourceUpdatedAt: string;\n  players: SeedPlayer[];\n};\n\nexport const IPL_SEED_SEASON = ${payload.season} as const;\nexport const IPL_SEED_SOURCE_PROVIDER = \"${payload.sourceProvider}\" as const;\nexport const IPL_SEED_GENERATED_AT = \"${payload.generatedAt}\";\n\nexport const IPL_2026_SQUADS: SeedTeam[] = ${JSON.stringify(payload.teams, null, 2)};\n`;
+  const output = `// Generated via scripts/generate-ipl-2026-squads.mjs\n\nexport type SeedRole = \"WK\" | \"BAT\" | \"AR\" | \"BOWL\";\n\nexport type SeedPlayer = {\n  name: string;\n  role: SeedRole;\n  iplPlayerId: string;\n  profileUrl: string;\n  nationality: string | null;\n  isOverseas: boolean;\n};\n\nexport type SeedTeam = {\n  name: string;\n  shortName: string;\n  sourceUrl: string;\n  sourceUpdatedAt: string;\n  players: SeedPlayer[];\n};\n\nexport const IPL_SEED_SEASON = ${payload.season} as const;\nexport const IPL_SEED_SOURCE_PROVIDER = \"${payload.sourceProvider}\" as const;\nexport const IPL_SEED_GENERATED_AT = \"${payload.generatedAt}\";\n\nexport const IPL_2026_SQUADS: SeedTeam[] = ${JSON.stringify(payload.teams, null, 2)};\n`;
 
   await writeFile("./lib/data/ipl-2026-squads.ts", output, "utf8");
   console.log(`Wrote ${teamPayload.length} teams to lib/data/ipl-2026-squads.ts`);

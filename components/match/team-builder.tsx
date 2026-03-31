@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CaptainIcon, PlayersIcon } from "@/components/ui/d11-icons";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 
 type LeagueOption = {
   id: string;
@@ -481,26 +483,15 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
       )}
 
       <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("players")}
-            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-              activeTab === "players" ? "bg-red-600 text-white" : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
-            }`}
-          >
-            Players
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("cvc")}
-            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-              activeTab === "cvc" ? "bg-red-600 text-white" : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
-            }`}
-          >
-            C/VC
-          </button>
-        </div>
+        <SegmentedTabs
+          className="max-w-xs"
+          items={[
+            { id: "players", label: "Players", icon: <PlayersIcon className="h-4 w-4" /> },
+            { id: "cvc", label: "C/VC", icon: <CaptainIcon className="h-4 w-4" /> },
+          ]}
+          activeId={activeTab}
+          onChange={setActiveTab}
+        />
 
         {loading ? <p className="mt-3 text-sm text-zinc-300">Loading players...</p> : null}
 
@@ -580,7 +571,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
               <button
                 type="button"
                 onClick={() => setActiveTab("cvc")}
-                className="inline-flex rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
+                className="d11-btn d11-btn-primary text-xs"
               >
                 Continue to C/VC
               </button>
@@ -640,7 +631,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
               type="button"
               onClick={saveTeam}
               disabled={saving || loading || isTeamLocked}
-              className="w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              className="d11-btn d11-btn-primary w-full"
             >
               {saving ? "Saving..." : "Save team"}
             </button>

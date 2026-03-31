@@ -1,4 +1,3 @@
-/* eslint-disable */
 // Generated via scripts/generate-ipl-2026-squads.mjs
 
 export type SeedRole = "WK" | "BAT" | "AR" | "BOWL";
@@ -22,14 +21,14 @@ export type SeedTeam = {
 
 export const IPL_SEED_SEASON = 2026 as const;
 export const IPL_SEED_SOURCE_PROVIDER = "iplt20" as const;
-export const IPL_SEED_GENERATED_AT = "2026-03-31T16:38:27.872Z";
+export const IPL_SEED_GENERATED_AT = "2026-03-31T16:44:56.697Z";
 
 export const IPL_2026_SQUADS: SeedTeam[] = [
   {
     "name": "Chennai Super Kings",
     "shortName": "CSK",
     "sourceUrl": "https://www.iplt20.com/teams/chennai-super-kings/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
         "name": "Ruturaj Gaikwad",
@@ -40,7 +39,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
         "isOverseas": false
       },
       {
-        "name": "Ms Dhoni",
+        "name": "MS Dhoni",
         "role": "WK",
         "iplPlayerId": "1",
         "profileUrl": "https://www.iplt20.com/players/ms-dhoni/1",
@@ -237,10 +236,10 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
     "name": "Delhi Capitals",
     "shortName": "DC",
     "sourceUrl": "https://www.iplt20.com/teams/delhi-capitals/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
-        "name": "Kl Rahul",
+        "name": "KL Rahul",
         "role": "WK",
         "iplPlayerId": "1125",
         "profileUrl": "https://www.iplt20.com/players/kl-rahul/1125",
@@ -445,7 +444,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
     "name": "Gujarat Titans",
     "shortName": "GT",
     "sourceUrl": "https://www.iplt20.com/teams/gujarat-titans/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
         "name": "Shubman Gill",
@@ -653,7 +652,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
     "name": "Kolkata Knight Riders",
     "shortName": "KKR",
     "sourceUrl": "https://www.iplt20.com/teams/kolkata-knight-riders/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
         "name": "Ajinkya Rahane",
@@ -861,7 +860,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
     "name": "Lucknow Super Giants",
     "shortName": "LSG",
     "sourceUrl": "https://www.iplt20.com/teams/lucknow-super-giants/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
         "name": "Rishabh Pant",
@@ -1069,7 +1068,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
     "name": "Mumbai Indians",
     "shortName": "MI",
     "sourceUrl": "https://www.iplt20.com/teams/mumbai-indians/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
         "name": "Rohit Sharma",
@@ -1112,7 +1111,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
         "isOverseas": true
       },
       {
-        "name": "Quinton De Kock",
+        "name": "Quinton de Kock",
         "role": "WK",
         "iplPlayerId": "834",
         "profileUrl": "https://www.iplt20.com/players/quinton-de-kock/834",
@@ -1277,7 +1276,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
     "name": "Punjab Kings",
     "shortName": "PBKS",
     "sourceUrl": "https://www.iplt20.com/teams/punjab-kings/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
         "name": "Shreyas Iyer",
@@ -1485,7 +1484,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
     "name": "Rajasthan Royals",
     "shortName": "RR",
     "sourceUrl": "https://www.iplt20.com/teams/rajasthan-royals/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
         "name": "Shubham Dubey",
@@ -1693,7 +1692,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
     "name": "Royal Challengers Bengaluru",
     "shortName": "RCB",
     "sourceUrl": "https://www.iplt20.com/teams/royal-challengers-bengaluru/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
         "name": "Rajat Patidar",
@@ -1901,7 +1900,7 @@ export const IPL_2026_SQUADS: SeedTeam[] = [
     "name": "Sunrisers Hyderabad",
     "shortName": "SRH",
     "sourceUrl": "https://www.iplt20.com/teams/sunrisers-hyderabad/squad",
-    "sourceUpdatedAt": "2026-03-31T16:38:27.872Z",
+    "sourceUpdatedAt": "2026-03-31T16:44:56.697Z",
     "players": [
       {
         "name": "Ishan Kishan",

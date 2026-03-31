@@ -20,7 +20,19 @@ type PlayerRow = {
   id: string;
   api_player_id: string;
   ipl_team_id: string | null;
+  normalized_name: string | null;
 };
+
+function normalizePlayerName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function isDerivedLineupPlayerId(matchApiId: string, apiPlayerId: string): boolean {
+  return apiPlayerId.startsWith(`${matchApiId}-`);
+}
 
 function withinLineupWindow(matchDateIso: string): boolean {
   const now = Date.now();
@@ -67,6 +79,7 @@ export async function GET(request: NextRequest) {
 
     let lineupAnnouncements = 0;
     const notifiedUsers = new Set<string>();
+    let promotedSeededPlayers = 0;
 
     for (const match of candidates) {
       const lineup = await getPlayingXI(match.api_match_id);
@@ -83,18 +96,120 @@ export async function GET(request: NextRequest) {
         is_overseas: player.isOverseas,
       }));
 
+      const teamIds = Array.from(
+        new Set(playerUpserts.map((player) => player.ipl_team_id).filter((teamId): teamId is string => Boolean(teamId)))
+      );
+      const normalizedNames = Array.from(
+        new Set(playerUpserts.map((player) => normalizePlayerName(player.name)).filter((name) => name.length > 0))
+      );
+
+      let reconciledUpserts = playerUpserts;
+
+      if (teamIds.length > 0 && normalizedNames.length > 0) {
+        const { data: existingPlayers, error: existingPlayersError } = await admin
+          .from("players")
+          .select("id, api_player_id, ipl_team_id, normalized_name")
+          .in("ipl_team_id", teamIds)
+          .in("normalized_name", normalizedNames);
+
+        if (existingPlayersError) {
+          throw existingPlayersError;
+        }
+
+        const existingByKey = new Map<string, PlayerRow>();
+        ((existingPlayers ?? []) as PlayerRow[]).forEach((player) => {
+          if (!player.ipl_team_id || !player.normalized_name) return;
+          const key = `${player.ipl_team_id}:${player.normalized_name}`;
+          if (!existingByKey.has(key)) {
+            existingByKey.set(key, player);
+          }
+        });
+
+        const promoteRows: Array<{
+          id: string;
+          api_player_id: string;
+          name: string;
+          role: "WK" | "BAT" | "AR" | "BOWL";
+          is_overseas: boolean;
+          source_provider: string;
+          source_updated_at: string;
+        }> = [];
+        const resolved: typeof playerUpserts = [];
+        const providerTimestamp = new Date().toISOString();
+
+        playerUpserts.forEach((player) => {
+          if (!player.ipl_team_id) {
+            resolved.push(player);
+            return;
+          }
+
+          const key = `${player.ipl_team_id}:${normalizePlayerName(player.name)}`;
+          const existing = existingByKey.get(key);
+
+          if (!existing) {
+            resolved.push(player);
+            return;
+          }
+
+          const derivedIncoming = isDerivedLineupPlayerId(match.api_match_id, player.api_player_id);
+
+          if (existing.api_player_id.startsWith("seed-ipl-") && !derivedIncoming && existing.api_player_id !== player.api_player_id) {
+            promoteRows.push({
+              id: existing.id,
+              api_player_id: player.api_player_id,
+              name: player.name,
+              role: player.role,
+              is_overseas: player.is_overseas,
+              source_provider: "cricdata",
+              source_updated_at: providerTimestamp,
+            });
+            resolved.push(player);
+            return;
+          }
+
+          if (existing.api_player_id !== player.api_player_id) {
+            resolved.push({
+              ...player,
+              api_player_id: existing.api_player_id,
+            });
+            return;
+          }
+
+          resolved.push(player);
+        });
+
+        if (promoteRows.length > 0) {
+          const { error: promoteError } = await admin.from("players").upsert(promoteRows, { onConflict: "id" });
+          if (promoteError) {
+            throw promoteError;
+          }
+          promotedSeededPlayers += promoteRows.length;
+        }
+
+        const dedupByApiId = new Map<string, (typeof playerUpserts)[number]>();
+        resolved.forEach((player) => dedupByApiId.set(player.api_player_id, player));
+        reconciledUpserts = Array.from(dedupByApiId.values());
+      }
+
       const { error: playerUpsertError } = await admin
         .from("players")
-        .upsert(playerUpserts, { onConflict: "api_player_id" });
+        .upsert(
+          reconciledUpserts.map((player) => ({
+            ...player,
+            source_provider: "cricdata",
+            source_updated_at: new Date().toISOString(),
+          })),
+          { onConflict: "api_player_id" }
+        );
 
       if (playerUpsertError) {
         throw playerUpsertError;
       }
 
-      const playerApiIds = playerUpserts.map((entry) => entry.api_player_id);
+      const playerApiIds = reconciledUpserts.map((entry) => entry.api_player_id);
       const { data: savedPlayers, error: savedPlayersError } = await admin
         .from("players")
-        .select("id, api_player_id, ipl_team_id")
+        .select("id, api_player_id, ipl_team_id, normalized_name")
         .in("api_player_id", playerApiIds);
 
       if (savedPlayersError) {
@@ -106,7 +221,7 @@ export async function GET(request: NextRequest) {
         playerByApiId.set(player.api_player_id, player);
       });
 
-      const matchPlayerRows = playerUpserts
+      const matchPlayerRows = reconciledUpserts
         .map((entry) => {
           const saved = playerByApiId.get(entry.api_player_id);
           if (!saved) {
@@ -198,6 +313,7 @@ export async function GET(request: NextRequest) {
       polledMatches: candidates.length,
       lineupAnnouncements,
       affectedUsers: notifiedUsers.size,
+      promotedSeededPlayers,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected lineup sync error";

@@ -48,19 +48,6 @@ function seedApiPlayerId(teamShortName: string, iplPlayerId: string): string {
   return `seed-ipl-${IPL_SEED_SEASON}-${teamShortName.toLowerCase()}-${iplPlayerId}`;
 }
 
-function chunkArray<T>(items: T[], chunkSize: number): T[] {
-  if (chunkSize <= 0 || items.length <= chunkSize) {
-    return items;
-  }
-
-  const chunks: T[] = [];
-  for (let index = 0; index < items.length; index += chunkSize) {
-    chunks.push(...items.slice(index, index + chunkSize));
-  }
-
-  return chunks;
-}
-
 async function ensureTeams(seedTeams: SeedTeam[]): Promise<Map<string, string>> {
   const admin = createAdminClient();
 
@@ -216,9 +203,7 @@ export async function runIplSquadSeed() {
   });
 
   if (updates.length > 0) {
-    const { error: updateError } = await admin
-      .from("players")
-      .upsert(chunkArray(updates, 400), { onConflict: "id" });
+    const { error: updateError } = await admin.from("players").upsert(updates, { onConflict: "id" });
 
     if (updateError) {
       throw updateError;
@@ -226,9 +211,7 @@ export async function runIplSquadSeed() {
   }
 
   if (inserts.length > 0) {
-    const { error: insertError } = await admin
-      .from("players")
-      .upsert(chunkArray(inserts, 400), { onConflict: "api_player_id" });
+    const { error: insertError } = await admin.from("players").upsert(inserts, { onConflict: "api_player_id" });
 
     if (insertError) {
       throw insertError;

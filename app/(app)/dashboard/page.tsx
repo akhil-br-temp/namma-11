@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { D11Surface, d11ActionClass } from "@/components/ui/d11-primitives";
+import { cn } from "@/lib/utils";
 
 const quickActions = [
   { href: "/league/create", label: "Create League" },
@@ -27,7 +29,7 @@ export default async function DashboardPage() {
 
   return (
     <section className="space-y-4">
-      <article className="overflow-hidden rounded-2xl border border-red-500/35 bg-gradient-to-br from-red-700 via-red-600 to-red-800 p-4 text-white shadow-[0_16px_40px_rgba(127,29,29,0.45)]">
+      <D11Surface tone="hero" className="overflow-hidden p-4 text-white">
         <h2 className="display-heading text-2xl font-bold">Welcome to Namma 11</h2>
         <p className="mt-1 text-sm text-red-100">Private leagues, live IPL points, and captain multipliers built for friends.</p>
         <div className="mt-4 grid grid-cols-2 gap-2 text-center text-xs">
@@ -40,18 +42,18 @@ export default async function DashboardPage() {
             <p className="text-base font-bold text-white">{upcomingCount ?? 0}</p>
           </div>
         </div>
-      </article>
+      </D11Surface>
 
-      <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+      <D11Surface className="p-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Quick actions</h3>
         <div className="mt-3 grid gap-2">
           {quickActions.map((action) => (
-            <Link key={action.href} href={action.href} className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2 text-sm font-semibold text-zinc-100 transition hover:border-red-500/40 hover:bg-zinc-900">
+            <Link key={action.href} href={action.href} className={cn(d11ActionClass("secondary"), "justify-start")}>
               {action.label}
             </Link>
           ))}
         </div>
-      </article>
+      </D11Surface>
     </section>
   );
 }
