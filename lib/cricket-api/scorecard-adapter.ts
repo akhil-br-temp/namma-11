@@ -2,13 +2,42 @@ import { getMatchScorecard } from "@/lib/cricket-api/cricdata";
 import { ProviderScorecard } from "@/lib/cricket-api/types";
 import { ScrapedMatchListing, scrapeIplMatchList, scrapeMatchScorecardFromUrl } from "@/lib/cricket-api/web-scraper";
 
-type ScoringMatchContext = {
+export type ScoringMatchContext = {
   apiMatchId: string;
   matchDate: string;
   teamAName: string;
   teamBName: string;
   teamAShortName?: string | null;
   teamBShortName?: string | null;
+};
+
+type MappingCandidate = {
+  row: ScrapedMatchListing;
+  diffHours: number;
+  score: number;
+  directOrderMatch: boolean;
+};
+
+export type ScorecardMappingDiagnostic = {
+  apiMatchId: string;
+  teamAName: string;
+  teamBName: string;
+  matchDate: string;
+  selectedScorecardUrl: string | null;
+  selectedSourceMatchId: string | null;
+  selectedSourceObjectId: string | null;
+  matched: boolean;
+  confidence: "high" | "medium" | "low" | "none";
+  timeDiffHours: number | null;
+  candidateCount: number;
+  topCandidates: Array<{
+    scorecardUrl: string;
+    sourceMatchId: string;
+    sourceObjectId: string;
+    matchDateIso: string;
+    timeDiffHours: number;
+    directOrderMatch: boolean;
+  }>;
 };
 
 type MatchListCache = {
@@ -53,14 +82,22 @@ function dateDiffHours(aIso: string, bIso: string): number {
   return Math.abs(a - b) / (1000 * 60 * 60);
 }
 
-function resolveMatchList(rows: ScrapedMatchListing[], context: ScoringMatchContext): ScrapedMatchListing | null {
+function mappingConfidence(diffHours: number | null): ScorecardMappingDiagnostic["confidence"] {
+  if (diffHours === null || !Number.isFinite(diffHours)) return "none";
+  if (diffHours <= 1) return "high";
+  if (diffHours <= 6) return "medium";
+  if (diffHours <= 24) return "low";
+  return "none";
+}
+
+function buildMatchCandidates(rows: ScrapedMatchListing[], context: ScoringMatchContext): MappingCandidate[] {
   const teamAOptions = [context.teamAName, context.teamAShortName ?? ""].filter((value): value is string => Boolean(value));
   const teamBOptions = [context.teamBName, context.teamBShortName ?? ""].filter((value): value is string => Boolean(value));
 
   const wantedA = new Set(teamAOptions.map(teamToken));
   const wantedB = new Set(teamBOptions.map(teamToken));
 
-  const scored = rows
+  return rows
     .map((row) => {
       const rowA = teamToken(row.teamAName);
       const rowB = teamToken(row.teamBName);
@@ -76,10 +113,15 @@ function resolveMatchList(rows: ScrapedMatchListing[], context: ScoringMatchCont
         row,
         diffHours,
         score: diffHours,
+        directOrderMatch: directMatch,
       };
     })
-    .filter((entry): entry is { row: ScrapedMatchListing; diffHours: number; score: number } => entry !== null)
+    .filter((entry): entry is MappingCandidate => entry !== null)
     .sort((a, b) => a.score - b.score);
+}
+
+function resolveMatchList(rows: ScrapedMatchListing[], context: ScoringMatchContext): ScrapedMatchListing | null {
+  const scored = buildMatchCandidates(rows, context);
 
   const best = scored[0];
   if (!best) {
@@ -106,6 +148,47 @@ async function getCachedMatchList(): Promise<ScrapedMatchListing[]> {
   };
 
   return rows;
+}
+
+function buildMappingDiagnostic(rows: ScrapedMatchListing[], context: ScoringMatchContext): ScorecardMappingDiagnostic {
+  const candidates = buildMatchCandidates(rows, context);
+  const selected = candidates[0] ?? null;
+  const selectedWithinThreshold = selected !== null && selected.diffHours <= 36;
+  const selectedDiff = selectedWithinThreshold ? selected.diffHours : null;
+
+  return {
+    apiMatchId: context.apiMatchId,
+    teamAName: context.teamAName,
+    teamBName: context.teamBName,
+    matchDate: context.matchDate,
+    selectedScorecardUrl: selectedWithinThreshold ? selected.row.scorecardUrl : null,
+    selectedSourceMatchId: selectedWithinThreshold ? selected.row.sourceMatchId : null,
+    selectedSourceObjectId: selectedWithinThreshold ? selected.row.sourceObjectId : null,
+    matched: selectedWithinThreshold,
+    confidence: mappingConfidence(selectedDiff),
+    timeDiffHours: selectedDiff,
+    candidateCount: candidates.length,
+    topCandidates: candidates.slice(0, 3).map((candidate) => ({
+      scorecardUrl: candidate.row.scorecardUrl,
+      sourceMatchId: candidate.row.sourceMatchId,
+      sourceObjectId: candidate.row.sourceObjectId,
+      matchDateIso: candidate.row.matchDateIso,
+      timeDiffHours: candidate.diffHours,
+      directOrderMatch: candidate.directOrderMatch,
+    })),
+  };
+}
+
+export async function diagnoseScorecardMapping(context: ScoringMatchContext): Promise<ScorecardMappingDiagnostic> {
+  const listings = await getCachedMatchList();
+  return buildMappingDiagnostic(listings, context);
+}
+
+export async function diagnoseScorecardMappings(
+  contexts: ScoringMatchContext[]
+): Promise<ScorecardMappingDiagnostic[]> {
+  const listings = await getCachedMatchList();
+  return contexts.map((context) => buildMappingDiagnostic(listings, context));
 }
 
 export async function getMatchScorecardForScoring(context: ScoringMatchContext): Promise<ProviderScorecard> {

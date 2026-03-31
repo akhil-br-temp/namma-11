@@ -4,13 +4,22 @@ import { useState } from "react";
 
 type SyncPayload = {
   fixtures?: { syncedTeams?: number; syncedMatches?: number };
+  seed?: { insertedPlayers?: number; updatedPlayers?: number };
   squads?: {
     syncedMatches?: number;
     upsertedPlayers?: number;
     upsertedMatchPlayers?: number;
     preloadedMatches?: number;
     preloadedMatchPlayers?: number;
+    promotedSeededPlayers?: number;
   };
+  report?: {
+    mergeStats?: {
+      duplicateRiskGroups?: number;
+      unresolvedSeedRows?: number;
+      promotedSeedRows?: number;
+    };
+  } | { error?: string };
   error?: string;
 };
 
@@ -38,12 +47,18 @@ export function ManualSyncButton() {
       }
 
       const fixtures = payload.fixtures;
+      const seed = payload.seed;
       const squads = payload.squads;
+      const report = payload.report && "mergeStats" in payload.report ? payload.report.mergeStats : undefined;
 
       setMessage(
-        `Sync complete: ${fixtures?.syncedMatches ?? 0} fixtures, ${squads?.upsertedPlayers ?? 0} players, ${
-          squads?.upsertedMatchPlayers ?? 0
-        } squad rows, ${squads?.preloadedMatchPlayers ?? 0} default preload rows.`
+        `Sync complete: ${fixtures?.syncedMatches ?? 0} fixtures, ${seed?.insertedPlayers ?? 0} seeded inserts, ${
+          seed?.updatedPlayers ?? 0
+        } seeded updates, ${squads?.upsertedPlayers ?? 0} provider upserts, ${
+          squads?.promotedSeededPlayers ?? report?.promotedSeedRows ?? 0
+        } promoted seed rows, ${report?.duplicateRiskGroups ?? 0} duplicate-risk groups, ${
+          report?.unresolvedSeedRows ?? 0
+        } unresolved seed IDs.`
       );
     } catch (syncError) {
       setError(syncError instanceof Error ? syncError.message : "Sync failed");

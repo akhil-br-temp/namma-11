@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { TeamBuilder } from "@/components/match/team-builder";
+import { LiveScoreStrip } from "@/components/match/live-score-strip";
 
 type MatchPageProps = {
   params: Promise<{ id: string }>;
@@ -113,6 +114,8 @@ export default async function MatchPage({ params }: MatchPageProps) {
 
   return (
     <section className="space-y-3">
+      <LiveScoreStrip matchId={id} />
+
       {leagueOptions.length === 0 ? (
         <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
           <h2 className="text-lg font-bold text-zinc-50">Team Builder</h2>

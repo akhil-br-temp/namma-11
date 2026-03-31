@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { LiveScoreSummaryCard, type LiveScoreSummary } from "@/components/match/live-score-summary-card";
 
 type LiveLeaderboardEntry = {
   userId: string;
@@ -37,6 +38,7 @@ type LiveMatchResponse = {
     status: string;
     matchDate: string;
   };
+  liveSummary: LiveScoreSummary | null;
   leagues: LiveLeagueSnapshot[];
   fetchedAt: string;
 };
@@ -231,6 +233,8 @@ export function LiveTracker({ matchId }: { matchId: string }) {
 
   return (
     <section className="space-y-3">
+      {data?.liveSummary ? <LiveScoreSummaryCard summary={data.liveSummary} /> : null}
+
       <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-bold text-zinc-50">Live Points</h2>

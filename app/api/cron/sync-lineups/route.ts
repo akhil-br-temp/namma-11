@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isCronAuthorized } from "@/lib/api/cron-auth";
 import { getPlayingXI } from "@/lib/cricket-api/cricdata";
+import { buildSyncHealthReport } from "@/lib/jobs/sync-report";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type MatchCandidate = {
@@ -64,7 +65,10 @@ export async function GET(request: NextRequest) {
     const candidates = ((matches ?? []) as MatchCandidate[]).filter((match) => withinLineupWindow(match.match_date));
 
     if (candidates.length === 0) {
-      return NextResponse.json({ polledMatches: 0, lineupAnnouncements: 0, affectedUsers: 0 });
+      const report = await buildSyncHealthReport().catch((reportError: unknown) => ({
+        error: reportError instanceof Error ? reportError.message : "Failed to generate sync report",
+      }));
+      return NextResponse.json({ polledMatches: 0, lineupAnnouncements: 0, affectedUsers: 0, report });
     }
 
     const { data: teams, error: teamError } = await admin.from("ipl_teams").select("id, api_team_id");
@@ -309,11 +313,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const report = await buildSyncHealthReport().catch((reportError: unknown) => ({
+      error: reportError instanceof Error ? reportError.message : "Failed to generate sync report",
+    }));
+
     return NextResponse.json({
       polledMatches: candidates.length,
       lineupAnnouncements,
       affectedUsers: notifiedUsers.size,
       promotedSeededPlayers,
+      report,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected lineup sync error";

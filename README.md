@@ -53,6 +53,10 @@ Protected cron routes (all require `CRON_SECRET`):
 - `/api/cron/sync-lineups` -> poll playing XI and set lock windows
 - `/api/cron/live-score` -> advance match statuses and lock teams by lock time
 
+Admin diagnostics route (also requires `CRON_SECRET`):
+
+- `/api/admin/scorecard-diagnostics` -> inspect scrape-based match mapping confidence and selected scorecard URL before running live-score
+
 ## CricketData API Notes
 
 - This app uses CricketData/CricAPI host: `https://api.cricapi.com/v1`
@@ -67,6 +71,7 @@ Use Bearer auth header with your cron secret:
 curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/sync-fixtures
 curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/sync-squads
 curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/sync-lineups
+curl -H "Authorization: Bearer <CRON_SECRET>" "https://namma-11.vercel.app/api/admin/scorecard-diagnostics?limit=30"
 curl -H "Authorization: Bearer <CRON_SECRET>" https://namma-11.vercel.app/api/cron/live-score
 ```
 

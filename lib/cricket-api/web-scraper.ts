@@ -342,6 +342,8 @@ function normalizeBattingRow(row: Dictionary): Dictionary | null {
     fours: toNumberSafe(row.fours),
     sixes: toNumberSafe(row.sixes),
     strikeRate: toNumberSafe(row.strikerate),
+    currentType: toNumberSafe(row.currentType),
+    isOut,
     dismissal: isOut ? dismissalText || "out" : "not out",
   };
 }
@@ -363,12 +365,43 @@ function normalizeBowlingRow(row: Dictionary): Dictionary | null {
     maidens: toNumberSafe(row.maidens),
     overs: toNumberSafe(row.overs),
     runsConceded: toNumberSafe(row.conceded),
+    economy: toNumberSafe(row.economy),
+    currentType: toNumberSafe(row.currentType),
+  };
+}
+
+function normalizeOverBallRow(ball: Dictionary): Dictionary {
+  return {
+    overNumber: toNumberSafe(ball.overNumber),
+    ballNumber: toNumberSafe(ball.ballNumber),
+    totalRuns: toNumberSafe(ball.totalRuns),
+    batsmanRuns: toNumberSafe(ball.batsmanRuns),
+    isWicket: toBooleanSafe(ball.isWicket),
+    wides: toNumberSafe(ball.wides),
+    noballs: toNumberSafe(ball.noballs),
+    byes: toNumberSafe(ball.byes),
+    legbyes: toNumberSafe(ball.legbyes),
+  };
+}
+
+function normalizeOverRow(over: Dictionary): Dictionary {
+  return {
+    overNumber: toNumberSafe(over.overNumber),
+    overRuns: toNumberSafe(over.overRuns),
+    overWickets: toNumberSafe(over.overWickets),
+    isComplete: toBooleanSafe(over.isComplete),
+    requiredRunRate: toNumberSafe(over.requiredRunRate),
+    requiredRuns: toNumberSafe(over.requiredRuns),
+    remainingBalls: toNumberSafe(over.remainingBalls),
+    balls: readObjectArray(over.balls).map(normalizeOverBallRow),
   };
 }
 
 function normalizeInningRow(inning: Dictionary): Dictionary | null {
   const battingRows = readObjectArray(inning.inningBatsmen).map(normalizeBattingRow).filter((row): row is Dictionary => row !== null);
   const bowlingRows = readObjectArray(inning.inningBowlers).map(normalizeBowlingRow).filter((row): row is Dictionary => row !== null);
+  const overRows = readObjectArray(inning.inningOvers).map(normalizeOverRow);
+  const latestOver = overRows[overRows.length - 1] ?? null;
 
   if (battingRows.length === 0 && bowlingRows.length === 0) {
     return null;
@@ -376,9 +409,23 @@ function normalizeInningRow(inning: Dictionary): Dictionary | null {
 
   return {
     inningNumber: toNumberSafe(inning.inningNumber),
+    isCurrent: toBooleanSafe(inning.isCurrent),
     team: toStringSafe(readObject(inning.team)?.abbreviation) || toStringSafe(readObject(inning.team)?.name),
+    runs: toNumberSafe(inning.runs),
+    wickets: toNumberSafe(inning.wickets),
+    overs: toNumberSafe(inning.overs),
+    balls: toNumberSafe(inning.balls),
+    target: toNumberSafe(inning.target),
+    totalOvers: toNumberSafe(inning.totalOvers),
+    totalBalls: toNumberSafe(inning.totalBalls),
+    ballsPerOver: toNumberSafe(inning.ballsPerOver),
+    requiredRunRate: latestOver ? toNumberSafe(latestOver.requiredRunRate) : 0,
+    requiredRuns: latestOver ? toNumberSafe(latestOver.requiredRuns) : 0,
+    remainingBalls: latestOver ? toNumberSafe(latestOver.remainingBalls) : 0,
     batting: battingRows,
     bowling: bowlingRows,
+    inningOvers: overRows,
+    latestOver,
   };
 }
 
