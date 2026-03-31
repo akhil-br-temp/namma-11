@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isCronAuthorized } from "@/lib/api/cron-auth";
-import { getPlayingXI } from "@/lib/cricket-api/cricdata";
+import { getMatchScorecardForScoring } from "@/lib/cricket-api/scorecard-adapter";
 import { buildSyncHealthReport } from "@/lib/jobs/sync-report";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -10,11 +10,15 @@ type MatchCandidate = {
   status: "upcoming" | "lineup_announced" | "live" | "completed";
   match_date: string;
   team_lock_time: string | null;
+  team_a_id: string;
+  team_b_id: string;
+  team_a: TeamRelation | TeamRelation[] | null;
+  team_b: TeamRelation | TeamRelation[] | null;
 };
 
-type TeamRow = {
-  id: string;
-  api_team_id: string;
+type TeamRelation = {
+  name: string;
+  short_name: string;
 };
 
 type PlayerRow = {
@@ -24,6 +28,44 @@ type PlayerRow = {
   normalized_name: string | null;
 };
 
+type ScrapedLineupPlayer = {
+  apiPlayerId: string;
+  name: string;
+  role: "WK" | "BAT" | "AR" | "BOWL";
+  iplTeamId: string | null;
+  isOverseas: boolean;
+};
+
+type MutableLineupPlayer = ScrapedLineupPlayer & {
+  seenBatting: boolean;
+  seenBowling: boolean;
+  wicketKeeperHint: boolean;
+};
+
+type Dictionary = Record<string, unknown>;
+
+function firstObject<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+  return value ?? null;
+}
+
+function toStringSafe(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function readObject(value: unknown): Dictionary | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Dictionary) : null;
+}
+
+function readObjectArray(value: unknown): Dictionary[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((entry): entry is Dictionary => typeof entry === "object" && entry !== null);
+}
+
 function normalizePlayerName(value: string): string {
   return value
     .trim()
@@ -32,7 +74,7 @@ function normalizePlayerName(value: string): string {
 }
 
 function isDerivedLineupPlayerId(matchApiId: string, apiPlayerId: string): boolean {
-  return apiPlayerId.startsWith(`${matchApiId}-`);
+  return apiPlayerId.startsWith(`derived-${matchApiId}-`) || apiPlayerId.startsWith(`${matchApiId}-`);
 }
 
 function withinLineupWindow(matchDateIso: string): boolean {
@@ -41,6 +83,142 @@ function withinLineupWindow(matchDateIso: string): boolean {
   const threeHoursBefore = matchTime - 3 * 60 * 60 * 1000;
   const oneHourAfter = matchTime + 60 * 60 * 1000;
   return now >= threeHoursBefore && now <= oneHourAfter;
+}
+
+function normalizeTeamToken(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function hasWicketKeeperHint(name: string, row: Dictionary): boolean {
+  const normalizedName = name.toLowerCase();
+  if (normalizedName.includes("(wk)") || normalizedName.includes("wk")) {
+    return true;
+  }
+
+  const keeperHints = [row.keeper, row.isKeeper, row.isWicketKeeper, row.wicketkeeper, row.wicketKeeper];
+  return keeperHints.some((value) => value === true || value === 1 || value === "1" || value === "true");
+}
+
+function resolveInningTeamId(
+  rawTeam: string,
+  match: MatchCandidate,
+  teamA: TeamRelation,
+  teamB: TeamRelation
+): string | null {
+  const token = normalizeTeamToken(rawTeam);
+  if (!token) {
+    return null;
+  }
+
+  const teamATokens = [teamA.name, teamA.short_name].map(normalizeTeamToken).filter((value) => value.length > 0);
+  const teamBTokens = [teamB.name, teamB.short_name].map(normalizeTeamToken).filter((value) => value.length > 0);
+
+  const matchATeam = teamATokens.some((candidate) => token === candidate || token.includes(candidate) || candidate.includes(token));
+  if (matchATeam) {
+    return match.team_a_id;
+  }
+
+  const matchBTeam = teamBTokens.some((candidate) => token === candidate || token.includes(candidate) || candidate.includes(token));
+  if (matchBTeam) {
+    return match.team_b_id;
+  }
+
+  return null;
+}
+
+function deriveRole(player: MutableLineupPlayer): "WK" | "BAT" | "AR" | "BOWL" {
+  if (player.wicketKeeperHint) return "WK";
+  if (player.seenBatting && player.seenBowling) return "AR";
+  if (player.seenBowling) return "BOWL";
+  return "BAT";
+}
+
+function buildScrapedLineup(
+  payload: unknown,
+  match: MatchCandidate,
+  teamA: TeamRelation,
+  teamB: TeamRelation
+): { announced: boolean; players: ScrapedLineupPlayer[] } {
+  const payloadObject = readObject(payload);
+  const dataObject = readObject(payloadObject?.data);
+  const inningsRows = readObjectArray(dataObject?.innings);
+
+  const byPlayerKey = new Map<string, MutableLineupPlayer>();
+
+  for (const inning of inningsRows) {
+    const inningTeamLabel = toStringSafe(inning.team);
+    const inningTeamId = resolveInningTeamId(inningTeamLabel, match, teamA, teamB);
+    const battingRows = readObjectArray(inning.batting);
+    const bowlingRows = readObjectArray(inning.bowling);
+
+    for (const row of battingRows) {
+      const name = toStringSafe(row.name);
+      const normalized = normalizePlayerName(name);
+      if (!normalized) {
+        continue;
+      }
+
+      const extractedPlayerId = toStringSafe(row.apiPlayerId) || toStringSafe(row.playerId) || toStringSafe(row.id);
+      const key = `${inningTeamId ?? "unknown"}:${normalized}`;
+      const existing = byPlayerKey.get(key);
+
+      const merged: MutableLineupPlayer = {
+        apiPlayerId: extractedPlayerId || existing?.apiPlayerId || `derived-${match.api_match_id}-${normalized}`,
+        name,
+        role: existing?.role ?? "BAT",
+        iplTeamId: inningTeamId ?? existing?.iplTeamId ?? null,
+        isOverseas: existing?.isOverseas ?? false,
+        seenBatting: true,
+        seenBowling: existing?.seenBowling ?? false,
+        wicketKeeperHint: (existing?.wicketKeeperHint ?? false) || hasWicketKeeperHint(name, row),
+      };
+
+      byPlayerKey.set(key, merged);
+    }
+
+    for (const row of bowlingRows) {
+      const name = toStringSafe(row.name);
+      const normalized = normalizePlayerName(name);
+      if (!normalized) {
+        continue;
+      }
+
+      const extractedPlayerId = toStringSafe(row.apiPlayerId) || toStringSafe(row.playerId) || toStringSafe(row.id);
+      const key = `${inningTeamId ?? "unknown"}:${normalized}`;
+      const existing = byPlayerKey.get(key);
+
+      const merged: MutableLineupPlayer = {
+        apiPlayerId: extractedPlayerId || existing?.apiPlayerId || `derived-${match.api_match_id}-${normalized}`,
+        name,
+        role: existing?.role ?? "BAT",
+        iplTeamId: inningTeamId ?? existing?.iplTeamId ?? null,
+        isOverseas: existing?.isOverseas ?? false,
+        seenBatting: existing?.seenBatting ?? false,
+        seenBowling: true,
+        wicketKeeperHint: (existing?.wicketKeeperHint ?? false) || hasWicketKeeperHint(name, row),
+      };
+
+      byPlayerKey.set(key, merged);
+    }
+  }
+
+  const players = Array.from(byPlayerKey.values())
+    .map<ScrapedLineupPlayer>((player) => ({
+      apiPlayerId: player.apiPlayerId,
+      name: player.name,
+      role: deriveRole(player),
+      iplTeamId: player.iplTeamId,
+      isOverseas: player.isOverseas,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return {
+    announced: players.length >= 11,
+    players,
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -53,7 +231,9 @@ export async function GET(request: NextRequest) {
   try {
     const { data: matches, error: matchError } = await admin
       .from("matches")
-      .select("id, api_match_id, status, match_date, team_lock_time")
+      .select(
+        "id, api_match_id, status, match_date, team_lock_time, team_a_id, team_b_id, team_a:ipl_teams!matches_team_a_id_fkey(name, short_name), team_b:ipl_teams!matches_team_b_id_fkey(name, short_name)"
+      )
       .in("status", ["upcoming", "lineup_announced", "live"])
       .order("match_date", { ascending: true })
       .limit(30);
@@ -71,32 +251,42 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ polledMatches: 0, lineupAnnouncements: 0, affectedUsers: 0, report });
     }
 
-    const { data: teams, error: teamError } = await admin.from("ipl_teams").select("id, api_team_id");
-    if (teamError) {
-      throw teamError;
-    }
-
-    const teamMap = new Map<string, string>();
-    ((teams ?? []) as TeamRow[]).forEach((team) => {
-      teamMap.set(team.api_team_id, team.id);
-    });
-
     let lineupAnnouncements = 0;
     const notifiedUsers = new Set<string>();
     let promotedSeededPlayers = 0;
 
     for (const match of candidates) {
-      const lineup = await getPlayingXI(match.api_match_id);
+      const teamA = firstObject(match.team_a);
+      const teamB = firstObject(match.team_b);
+      if (!teamA || !teamB) {
+        continue;
+      }
+
+      let lineup: { announced: boolean; players: ScrapedLineupPlayer[] };
+      try {
+        const scorecard = await getMatchScorecardForScoring({
+          apiMatchId: match.api_match_id,
+          matchDate: match.match_date,
+          teamAName: teamA.name,
+          teamBName: teamB.name,
+          teamAShortName: teamA.short_name,
+          teamBShortName: teamB.short_name,
+        });
+
+        lineup = buildScrapedLineup(scorecard.payload, match, teamA, teamB);
+      } catch {
+        continue;
+      }
 
       if (!lineup.announced || lineup.players.length < 11) {
         continue;
       }
 
       const playerUpserts = lineup.players.map((player) => ({
-        api_player_id: player.apiPlayerId ?? `${match.api_match_id}-${player.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+        api_player_id: player.apiPlayerId,
         name: player.name,
         role: player.role,
-        ipl_team_id: player.teamApiId ? (teamMap.get(player.teamApiId) ?? null) : null,
+        ipl_team_id: player.iplTeamId,
         is_overseas: player.isOverseas,
       }));
 
@@ -164,7 +354,7 @@ export async function GET(request: NextRequest) {
               name: player.name,
               role: player.role,
               is_overseas: player.is_overseas,
-              source_provider: "cricdata",
+              source_provider: "espn",
               source_updated_at: providerTimestamp,
             });
             resolved.push(player);
@@ -200,7 +390,7 @@ export async function GET(request: NextRequest) {
         .upsert(
           reconciledUpserts.map((player) => ({
             ...player,
-            source_provider: "cricdata",
+            source_provider: "espn",
             source_updated_at: new Date().toISOString(),
           })),
           { onConflict: "api_player_id" }
@@ -298,7 +488,7 @@ export async function GET(request: NextRequest) {
             match_id: match.id,
             payload: {
               title: "Lineups are out!",
-              body: "You have 30 minutes to edit your team.",
+              body: "Edit your team before the match starts.",
               matchId: match.id,
             },
           }));

@@ -1,6 +1,6 @@
 export type MatchStatus = "upcoming" | "lineup_announced" | "live" | "completed";
 
-export type ProviderName = "cricdata" | "entitysport" | "espn";
+export type ProviderName = "espn";
 
 export interface ProviderTeam {
   id: string;

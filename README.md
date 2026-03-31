@@ -26,7 +26,7 @@ npm install
 cp .env.example .env.local
 ```
 
-3. Fill Supabase and API keys in `.env.local`.
+3. Fill Supabase and app settings in `.env.local`.
 
 4. Start the app:
 
@@ -57,11 +57,11 @@ Admin diagnostics route (also requires `CRON_SECRET`):
 
 - `/api/admin/scorecard-diagnostics` -> inspect scrape-based match mapping confidence and selected scorecard URL before running live-score
 
-## CricketData API Notes
+## Data Ingestion Notes
 
-- This app uses CricketData/CricAPI host: `https://api.cricapi.com/v1`
-- `CRICDATA_API_KEY` must be the API key from developer console.
-- Your CricketData website login password is not used in API requests.
+- Match fixtures and live scorecards are sourced from web scraping.
+- No Cricdata/EntitySport API key is required.
+- Keep `SCORECARD_API_FALLBACK_DISABLED=1` to enforce scraper-only behavior.
 
 ### Manual Run (Local or Production)
 
@@ -137,6 +137,6 @@ If you do not store `cron_secret` in DB settings, replace it directly in URL for
 ## Next Implementation Steps
 
 - Add actual auth callbacks and profile onboarding
-- Build fixture sync route with CricData + EntitySport failover
+- Harden scraper selectors and add alerting for source schema drift
 - Implement team builder with role and credit validations against live data
 - Add league create/join APIs and leaderboard queries

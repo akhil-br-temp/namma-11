@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { TeamBuilder } from "@/components/match/team-builder";
 import { LiveScoreStrip } from "@/components/match/live-score-strip";
+import { getSeedSquadPlayersForTeams, type TeamIdentity } from "@/lib/data/seed-squads";
 
 type MatchPageProps = {
   params: Promise<{ id: string }>;
@@ -13,6 +14,14 @@ type SquadPlayer = {
   role: "WK" | "BAT" | "AR" | "BOWL";
   teamShortName: string;
   isOverseas: boolean;
+};
+
+type MatchRow = {
+  id: string;
+  team_a_id: string;
+  team_b_id: string;
+  team_a: TeamIdentity | TeamIdentity[] | null;
+  team_b: TeamIdentity | TeamIdentity[] | null;
 };
 
 function firstObject<T>(value: T | T[] | null | undefined): T | null {
@@ -59,7 +68,15 @@ export default async function MatchPage({ params }: MatchPageProps) {
     name: getLeagueName(entry.leagues),
   }));
 
-  const { data: match } = await supabase.from("matches").select("id, team_a_id, team_b_id").eq("id", id).maybeSingle();
+  const { data: match } = await supabase
+    .from("matches")
+    .select(
+      "id, team_a_id, team_b_id, team_a:ipl_teams!matches_team_a_id_fkey(name, short_name), team_b:ipl_teams!matches_team_b_id_fkey(name, short_name)"
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  const matchRow = match as MatchRow | null;
 
   const { data: matchPlayers } = await supabase
     .from("match_players")
@@ -84,13 +101,13 @@ export default async function MatchPage({ params }: MatchPageProps) {
         };
       })
       .filter((player): player is NonNullable<typeof player> => player !== null);
-  } else if (match) {
+  } else if (matchRow) {
     const { data: fallbackPlayers } = await supabase
       .from("players")
       .select("id, name, role, is_overseas, team:ipl_teams!players_ipl_team_id_fkey(short_name)")
-      .in("ipl_team_id", [match.team_a_id, match.team_b_id]);
+      .in("ipl_team_id", [matchRow.team_a_id, matchRow.team_b_id]);
 
-    squadPlayers = (fallbackPlayers ?? []).map((player) => {
+    const fallback = (fallbackPlayers ?? []).map((player) => {
       const team = firstObject(player.team);
       return {
         id: player.id,
@@ -100,6 +117,12 @@ export default async function MatchPage({ params }: MatchPageProps) {
         isOverseas: player.is_overseas,
       };
     });
+
+    if (fallback.length > 0) {
+      squadPlayers = fallback;
+    } else {
+      squadPlayers = getSeedSquadPlayersForTeams([firstObject(matchRow.team_a), firstObject(matchRow.team_b)]);
+    }
   }
 
   const squadGroups = Array.from(
@@ -127,7 +150,7 @@ export default async function MatchPage({ params }: MatchPageProps) {
 
       <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Match Squad</h3>
-        {squadPlayers.length === 0 ? <p className="mt-2 text-sm text-zinc-300">Squad not synced yet. Run sync from the matches page.</p> : null}
+        {squadPlayers.length === 0 ? <p className="mt-2 text-sm text-zinc-300">Squad list is not available for these teams yet.</p> : null}
         {squadPlayers.length > 0 ? (
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             {squadGroups.map(([teamShortName, players]) => (

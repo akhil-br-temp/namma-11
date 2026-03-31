@@ -18,11 +18,19 @@ export async function POST() {
   try {
     const fixtures = await runFixtureSync();
     const seed = await runIplSquadSeed();
-    const squads = await runSquadSync();
+    let squads: Awaited<ReturnType<typeof runSquadSync>> | null = null;
+    let squadSyncWarning: string | null = null;
+
+    try {
+      squads = await runSquadSync();
+    } catch (squadError) {
+      squadSyncWarning = squadError instanceof Error ? squadError.message : "Provider squad sync failed";
+    }
+
     const report = await buildSyncHealthReport().catch((reportError: unknown) => ({
       error: reportError instanceof Error ? reportError.message : "Failed to generate sync report",
     }));
-    return NextResponse.json({ fixtures, seed, squads, report });
+    return NextResponse.json({ fixtures, seed, squads, squadSyncWarning, report });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sync failed";
     return NextResponse.json({ error: message }, { status: 500 });

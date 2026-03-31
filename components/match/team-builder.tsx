@@ -44,11 +44,6 @@ type TeamBuilderProps = {
   leagueOptions: LeagueOption[];
 };
 
-type SyncResponse = {
-  error?: string;
-  squads?: { upsertedMatchPlayers?: number; preloadedMatchPlayers?: number };
-};
-
 const ROLE_LIMITS: Record<Player["role"], { min: number; max: number }> = {
   WK: { min: 1, max: 4 },
   BAT: { min: 1, max: 6 },
@@ -85,7 +80,6 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
   const [activeTab, setActiveTab] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [syncingSquad, setSyncingSquad] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -373,35 +367,6 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
     }
   };
 
-  const syncSquadNow = async () => {
-    setSyncingSquad(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const response = await fetch("/api/admin/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const payload = (await response.json()) as SyncResponse;
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Unable to sync squad");
-      }
-
-      await loadData();
-      setMessage(
-        `Squad synced. Refreshed players (${payload.squads?.upsertedMatchPlayers ?? 0} squad rows, ${
-          payload.squads?.preloadedMatchPlayers ?? 0
-        } default preload rows).`
-      );
-    } catch (syncError) {
-      setError(syncError instanceof Error ? syncError.message : "Unable to sync squad");
-    } finally {
-      setSyncingSquad(false);
-    }
-  };
-
   return (
     <section className="space-y-4">
       {!isTeamLocked ? (
@@ -497,14 +462,14 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
 
         {!loading && players.length === 0 ? (
           <div className="mt-3 space-y-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
-            <p className="text-sm text-amber-200">No players available yet. Sync squad/match players first.</p>
+            <p className="text-sm text-amber-200">No players available yet for this match. Retrying will load seeded squad players for both teams.</p>
             <button
               type="button"
-              onClick={syncSquadNow}
-              disabled={syncingSquad}
+              onClick={() => void loadData()}
+              disabled={loading}
               className="inline-flex items-center rounded-lg bg-amber-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {syncingSquad ? "Syncing squad..." : "Sync squad now"}
+              {loading ? "Refreshing players..." : "Retry loading players"}
             </button>
           </div>
         ) : null}
@@ -515,7 +480,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
 
             {groupedPlayers.some(([team]) => team === "UNASSIGNED") ? (
               <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200">
-                Some players are missing team mapping and are shown under Unassigned Team. Run Sync squad now to refresh mappings.
+                Some players are missing team mapping and are shown under Unassigned Team.
               </p>
             ) : null}
 

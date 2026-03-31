@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getUpcomingMatches } from "@/lib/cricket-api/cricdata";
+import { getUpcomingMatchesFromWeb } from "@/lib/cricket-api/web-scraper";
 
 type TeamRow = {
   name: string;
@@ -19,7 +19,7 @@ function getShortName(name: string): string {
 }
 
 export async function runFixtureSync() {
-  const providerResult = await getUpcomingMatches();
+  const providerResult = await getUpcomingMatchesFromWeb();
   const admin = createAdminClient();
 
   const teamsByApiId = new Map<string, TeamRow>();

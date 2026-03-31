@@ -5,6 +5,7 @@ import { useState } from "react";
 type SyncPayload = {
   fixtures?: { syncedTeams?: number; syncedMatches?: number };
   seed?: { insertedPlayers?: number; updatedPlayers?: number };
+  squadSyncWarning?: string | null;
   squads?: {
     syncedMatches?: number;
     upsertedPlayers?: number;
@@ -51,14 +52,18 @@ export function ManualSyncButton() {
       const squads = payload.squads;
       const report = payload.report && "mergeStats" in payload.report ? payload.report.mergeStats : undefined;
 
+      const providerSyncSummary = squads
+        ? `${squads.upsertedPlayers ?? 0} provider upserts, ${squads.promotedSeededPlayers ?? report?.promotedSeedRows ?? 0} promoted seed rows`
+        : "provider squad sync skipped";
+
+      const warningSuffix = payload.squadSyncWarning ? ` Provider sync warning: ${payload.squadSyncWarning}.` : "";
+
       setMessage(
         `Sync complete: ${fixtures?.syncedMatches ?? 0} fixtures, ${seed?.insertedPlayers ?? 0} seeded inserts, ${
           seed?.updatedPlayers ?? 0
-        } seeded updates, ${squads?.upsertedPlayers ?? 0} provider upserts, ${
-          squads?.promotedSeededPlayers ?? report?.promotedSeedRows ?? 0
-        } promoted seed rows, ${report?.duplicateRiskGroups ?? 0} duplicate-risk groups, ${
+        } seeded updates, ${providerSyncSummary}, ${report?.duplicateRiskGroups ?? 0} duplicate-risk groups, ${
           report?.unresolvedSeedRows ?? 0
-        } unresolved seed IDs.`
+        } unresolved seed IDs.${warningSuffix}`
       );
     } catch (syncError) {
       setError(syncError instanceof Error ? syncError.message : "Sync failed");
@@ -72,7 +77,7 @@ export function ManualSyncButton() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-sm font-semibold text-zinc-50">Manual Data Sync</h3>
-          <p className="text-xs text-zinc-300">Refresh fixtures and squads immediately (requires logged-in user).</p>
+          <p className="text-xs text-zinc-300">Refresh fixtures and seeded squads immediately (requires logged-in user).</p>
         </div>
         <button
           type="button"

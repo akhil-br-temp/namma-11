@@ -129,7 +129,7 @@ export async function buildSyncHealthReport(limit = 25): Promise<SyncHealthRepor
 
     const isSeedId = row.api_player_id.startsWith(seedPrefix);
     const isSeededSeason = row.seed_season === IPL_SEED_SEASON;
-    const isProviderRow = row.source_provider === "cricdata";
+    const isProviderRow = row.source_provider === "espn";
 
     if (isSeededSeason) seededSeasonRows += 1;
     if (isSeedId) seededIdRows += 1;

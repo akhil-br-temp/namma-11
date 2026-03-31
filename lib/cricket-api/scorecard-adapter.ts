@@ -1,4 +1,3 @@
-import { getMatchScorecard } from "@/lib/cricket-api/cricdata";
 import { ProviderScorecard } from "@/lib/cricket-api/types";
 import { ScrapedMatchListing, scrapeIplMatchList, scrapeMatchScorecardFromUrl } from "@/lib/cricket-api/web-scraper";
 
@@ -192,24 +191,14 @@ export async function diagnoseScorecardMappings(
 }
 
 export async function getMatchScorecardForScoring(context: ScoringMatchContext): Promise<ProviderScorecard> {
-  try {
-    const listings = await getCachedMatchList();
-    const matched = resolveMatchList(listings, context);
+  const listings = await getCachedMatchList();
+  const matched = resolveMatchList(listings, context);
 
-    if (!matched) {
-      throw new Error(
-        `No scraped match-list candidate found for ${context.teamAName} vs ${context.teamBName} on ${context.matchDate}`
-      );
-    }
-
-    return await scrapeMatchScorecardFromUrl(matched.scorecardUrl, context.apiMatchId);
-  } catch (webError) {
-    const fallbackDisabled = process.env.SCORECARD_API_FALLBACK_DISABLED === "1";
-    if (fallbackDisabled) {
-      const message = webError instanceof Error ? webError.message : "Unknown web scorecard scrape error";
-      throw new Error(`Web scorecard flow failed and API fallback is disabled: ${message}`);
-    }
-
-    return await getMatchScorecard(context.apiMatchId);
+  if (!matched) {
+    throw new Error(
+      `No scraped match-list candidate found for ${context.teamAName} vs ${context.teamBName} on ${context.matchDate}`
+    );
   }
+
+  return await scrapeMatchScorecardFromUrl(matched.scorecardUrl, context.apiMatchId);
 }

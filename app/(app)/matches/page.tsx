@@ -3,6 +3,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { ManualSyncButton } from "@/components/matches/manual-sync-button";
 import { getTeamLogo } from "@/lib/utils";
+import { getSeedSquadCountForTeams } from "@/lib/data/seed-squads";
 
 type Team = { name: string; short_name: string };
 
@@ -12,10 +13,6 @@ type MatchRow = {
   status: string;
   team_a: Team | null;
   team_b: Team | null;
-};
-
-type MatchPlayerRow = {
-  match_id: string;
 };
 
 function statusStyle(status: string): string {
@@ -48,19 +45,6 @@ export default async function MatchesPage() {
     .limit(30);
 
   const matches = (data ?? []) as unknown as MatchRow[];
-  const matchIds = matches.map((match) => match.id);
-
-  let squadCoverage = new Map<string, number>();
-
-  if (matchIds.length > 0) {
-    const { data: matchPlayers } = await supabase.from("match_players").select("match_id").in("match_id", matchIds);
-
-    const counts = new Map<string, number>();
-    ((matchPlayers ?? []) as MatchPlayerRow[]).forEach((row) => {
-      counts.set(row.match_id, (counts.get(row.match_id) ?? 0) + 1);
-    });
-    squadCoverage = counts;
-  }
 
   return (
     <section className="space-y-3">
@@ -70,7 +54,7 @@ export default async function MatchesPage() {
       <ManualSyncButton />
       {matches.length === 0 ? <p className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-300">No fixtures synced yet. Run sync to load matches.</p> : null}
       {matches.map((match) => {
-        const squadCount = squadCoverage.get(match.id) ?? 0;
+        const squadCount = getSeedSquadCountForTeams(match.team_a, match.team_b);
         return (
           <Link
             key={match.id}
@@ -110,7 +94,7 @@ export default async function MatchesPage() {
               </span>
             </div>
             <p className="mt-2 text-sm text-zinc-300">{formatMatchTime(match.match_date)} IST</p>
-            <p className="mt-1 text-xs text-zinc-400">Squad records: {squadCount}</p>
+            <p className="mt-1 text-xs text-zinc-400">Seed squad players: {squadCount}</p>
           </Link>
         );
       })}
