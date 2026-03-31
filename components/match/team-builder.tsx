@@ -66,7 +66,7 @@ function getInitials(name: string): string {
 
 function PlayerAvatar({ name }: { name: string }) {
   return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700">
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-700 text-[11px] font-bold text-zinc-200">
       <span>{getInitials(name)}</span>
     </div>
   );
@@ -403,17 +403,17 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
   return (
     <section className="space-y-4">
       {!isTeamLocked ? (
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h3 className="text-base font-bold text-slate-900">Build Your XI</h3>
-          <p className="mt-1 text-sm text-slate-600">Select players from the two squad groups, then finalize Captain and Vice-Captain in C/VC.</p>
+        <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+          <h3 className="text-base font-bold text-zinc-50">Build Your XI</h3>
+          <p className="mt-1 text-sm text-zinc-300">Select players from the two squad groups, then finalize Captain and Vice-Captain in C/VC.</p>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-zinc-200">
               League
               <select
                 value={leagueId}
                 onChange={(event) => setLeagueId(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-zinc-700 px-3 py-2 text-sm"
               >
                 {leagueOptions.map((league) => (
                   <option key={league.id} value={league.id}>
@@ -423,53 +423,53 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
               </select>
             </label>
 
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-zinc-200">
               Team name
               <input
                 type="text"
                 value={teamName}
                 onChange={(event) => setTeamName(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border border-zinc-700 px-3 py-2 text-sm"
               />
             </label>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-700 md:grid-cols-6">
-            <div className="rounded-lg bg-white p-2 text-center">
-              <p className="font-semibold text-slate-500">Selected</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{selectedIds.length}/11</p>
+          <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-zinc-900 p-3 text-xs text-zinc-200 md:grid-cols-6">
+            <div className="rounded-lg bg-zinc-950 p-2 text-center">
+              <p className="font-semibold text-zinc-400">Selected</p>
+              <p className="mt-1 text-sm font-bold text-zinc-50">{selectedIds.length}/11</p>
             </div>
-            <div className="rounded-lg bg-white p-2 text-center">
-              <p className="font-semibold text-slate-500">Credits</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{creditsUsed.toFixed(1)}</p>
+            <div className="rounded-lg bg-zinc-950 p-2 text-center">
+              <p className="font-semibold text-zinc-400">Credits</p>
+              <p className="mt-1 text-sm font-bold text-zinc-50">{creditsUsed.toFixed(1)}</p>
             </div>
-            <div className="rounded-lg bg-white p-2 text-center">
-              <p className="font-semibold text-slate-500">WK</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{selectedRoleCounts.WK}</p>
+            <div className="rounded-lg bg-zinc-950 p-2 text-center">
+              <p className="font-semibold text-zinc-400">WK</p>
+              <p className="mt-1 text-sm font-bold text-zinc-50">{selectedRoleCounts.WK}</p>
             </div>
-            <div className="rounded-lg bg-white p-2 text-center">
-              <p className="font-semibold text-slate-500">BAT</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{selectedRoleCounts.BAT}</p>
+            <div className="rounded-lg bg-zinc-950 p-2 text-center">
+              <p className="font-semibold text-zinc-400">BAT</p>
+              <p className="mt-1 text-sm font-bold text-zinc-50">{selectedRoleCounts.BAT}</p>
             </div>
-            <div className="rounded-lg bg-white p-2 text-center">
-              <p className="font-semibold text-slate-500">AR</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{selectedRoleCounts.AR}</p>
+            <div className="rounded-lg bg-zinc-950 p-2 text-center">
+              <p className="font-semibold text-zinc-400">AR</p>
+              <p className="mt-1 text-sm font-bold text-zinc-50">{selectedRoleCounts.AR}</p>
             </div>
-            <div className="rounded-lg bg-white p-2 text-center">
-              <p className="font-semibold text-slate-500">BOWL</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{selectedRoleCounts.BOWL}</p>
+            <div className="rounded-lg bg-zinc-950 p-2 text-center">
+              <p className="font-semibold text-zinc-400">BOWL</p>
+              <p className="mt-1 text-sm font-bold text-zinc-50">{selectedRoleCounts.BOWL}</p>
             </div>
           </div>
 
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-zinc-400">
             Rules: 1-4 WK, 1-6 BAT, 1-4 AR, 1-6 BOWL, max 7 from one team, max 4 overseas, 100 credits.
           </p>
         </article>
       ) : (
-        <article className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <h3 className="text-base font-bold text-slate-900">Team Locked</h3>
-          <p className="mt-1 text-sm text-slate-700">The match has started. Team edits are disabled.</p>
-          <div className="mt-3 rounded-lg bg-white p-3 text-sm text-slate-700">
+        <article className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
+          <h3 className="text-base font-bold text-zinc-50">Team Locked</h3>
+          <p className="mt-1 text-sm text-zinc-200">The match has started. Team edits are disabled.</p>
+          <div className="mt-3 rounded-lg bg-zinc-950 p-3 text-sm text-zinc-200">
             <p>
               Captain: <strong>{players.find((p) => p.id === captainId)?.name || "-"}</strong>
             </p>
@@ -480,13 +480,13 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
         </article>
       )}
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setActiveTab("players")}
             className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-              activeTab === "players" ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              activeTab === "players" ? "bg-red-600 text-white" : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
             }`}
           >
             Players
@@ -495,18 +495,18 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
             type="button"
             onClick={() => setActiveTab("cvc")}
             className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-              activeTab === "cvc" ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              activeTab === "cvc" ? "bg-red-600 text-white" : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
             }`}
           >
             C/VC
           </button>
         </div>
 
-        {loading ? <p className="mt-3 text-sm text-slate-600">Loading players...</p> : null}
+        {loading ? <p className="mt-3 text-sm text-zinc-300">Loading players...</p> : null}
 
         {!loading && players.length === 0 ? (
-          <div className="mt-3 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
-            <p className="text-sm text-amber-900">No players available yet. Sync squad/match players first.</p>
+          <div className="mt-3 space-y-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
+            <p className="text-sm text-amber-200">No players available yet. Sync squad/match players first.</p>
             <button
               type="button"
               onClick={syncSquadNow}
@@ -520,22 +520,22 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
 
         {!loading && players.length > 0 && activeTab === "players" ? (
           <div className="mt-3 space-y-3">
-            <p className="text-xs text-slate-600">Players are grouped by team for quicker scanning and selection.</p>
+            <p className="text-xs text-zinc-300">Players are grouped by team for quicker scanning and selection.</p>
 
             {groupedPlayers.some(([team]) => team === "UNASSIGNED") ? (
-              <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+              <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200">
                 Some players are missing team mapping and are shown under Unassigned Team. Run Sync squad now to refresh mappings.
               </p>
             ) : null}
 
             <div className="grid gap-3 md:grid-cols-2">
               {groupedPlayers.map(([teamShortName, roster]) => (
-                <section key={teamShortName} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <section key={teamShortName} className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-slate-900">
+                    <h4 className="text-sm font-bold text-zinc-50">
                       {teamShortName === "UNASSIGNED" ? "Unassigned Team" : teamShortName}
                     </h4>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600">
+                    <span className="rounded-full bg-zinc-950 px-2 py-0.5 text-xs font-semibold text-zinc-300">
                       {selectedCountByTeam(teamShortName)} selected
                     </span>
                   </div>
@@ -548,14 +548,14 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
                         <label
                           key={player.id}
                           className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 text-sm transition ${
-                            checked ? "border-teal-500 bg-teal-50" : "border-slate-200 bg-white"
+                            checked ? "border-red-500 bg-red-500/10" : "border-zinc-800 bg-zinc-950"
                           } ${isTeamLocked ? "cursor-not-allowed opacity-75" : ""}`}
                         >
                           <div className="flex items-center gap-3">
                             <PlayerAvatar name={player.name} />
                             <div>
-                              <p className="font-semibold text-slate-900">{player.name}</p>
-                              <p className="text-xs text-slate-600">
+                              <p className="font-semibold text-zinc-50">{player.name}</p>
+                              <p className="text-xs text-zinc-300">
                                 {player.role} • {player.creditValue.toFixed(1)} credits
                                 {player.isOverseas ? " • Overseas" : ""}
                               </p>
@@ -580,7 +580,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
               <button
                 type="button"
                 onClick={() => setActiveTab("cvc")}
-                className="inline-flex rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+                className="inline-flex rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
               >
                 Continue to C/VC
               </button>
@@ -591,7 +591,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
         {!loading && players.length > 0 && activeTab === "cvc" ? (
           <div className="mt-3 space-y-3">
             {selectedPlayers.length === 0 ? (
-              <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Select players in the squad lists first, then assign C and VC here.</p>
+              <p className="rounded-lg bg-zinc-900 p-3 text-sm text-zinc-300">Select players in the squad lists first, then assign C and VC here.</p>
             ) : null}
 
             {selectedPlayers.map((player) => {
@@ -599,12 +599,12 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
               const isVice = viceCaptainId === player.id;
 
               return (
-                <div key={player.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
+                <div key={player.id} className="flex items-center justify-between rounded-xl border border-zinc-800 p-3">
                   <div className="flex items-center gap-3">
                     <PlayerAvatar name={player.name} />
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{player.name}</p>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-sm font-semibold text-zinc-50">{player.name}</p>
+                      <p className="text-xs text-zinc-300">
                         {player.role} • {player.team?.short_name ?? "TBD"}
                       </p>
                     </div>
@@ -616,7 +616,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
                       onClick={() => chooseCaptain(player.id)}
                       disabled={isTeamLocked}
                       className={`rounded-md px-2.5 py-1.5 text-xs font-semibold ${
-                        isCaptain ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-700"
+                        isCaptain ? "bg-red-600 text-white" : "bg-zinc-800 text-zinc-200"
                       }`}
                     >
                       C
@@ -626,7 +626,7 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
                       onClick={() => chooseViceCaptain(player.id)}
                       disabled={isTeamLocked}
                       className={`rounded-md px-2.5 py-1.5 text-xs font-semibold ${
-                        isVice ? "bg-indigo-700 text-white" : "bg-slate-100 text-slate-700"
+                        isVice ? "bg-red-500 text-white" : "bg-zinc-800 text-zinc-200"
                       }`}
                     >
                       VC
@@ -640,15 +640,15 @@ export function TeamBuilder({ matchId, leagueOptions }: TeamBuilderProps) {
               type="button"
               onClick={saveTeam}
               disabled={saving || loading || isTeamLocked}
-              className="w-full rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              className="w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save team"}
             </button>
           </div>
         ) : null}
 
-        {message ? <p className="mt-3 text-sm text-emerald-700">{message}</p> : null}
-        {error ? <p className="mt-3 text-sm text-rose-700">{error}</p> : null}
+        {message ? <p className="mt-3 text-sm text-emerald-400">{message}</p> : null}
+        {error ? <p className="mt-3 text-sm text-rose-400">{error}</p> : null}
       </article>
     </section>
   );

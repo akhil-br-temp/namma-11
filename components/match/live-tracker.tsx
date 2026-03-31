@@ -74,17 +74,17 @@ function pointsMovementLabel(delta: number | null): string {
 }
 
 function movementColor(delta: number | null, positiveIsGood = true): string {
-  if (delta === null || delta === 0) return "text-slate-500";
-  const positiveTone = positiveIsGood ? "text-emerald-700" : "text-rose-700";
-  const negativeTone = positiveIsGood ? "text-rose-700" : "text-emerald-700";
+  if (delta === null || delta === 0) return "text-zinc-400";
+  const positiveTone = positiveIsGood ? "text-emerald-400" : "text-rose-400";
+  const negativeTone = positiveIsGood ? "text-rose-400" : "text-emerald-400";
   return delta > 0 ? positiveTone : negativeTone;
 }
 
 function statusTone(status: string): string {
-  if (status === "live") return "bg-rose-100 text-rose-700";
-  if (status === "completed") return "bg-slate-200 text-slate-700";
-  if (status === "lineup_announced") return "bg-amber-100 text-amber-800";
-  return "bg-sky-100 text-sky-800";
+  if (status === "live") return "bg-rose-500/20 text-rose-400";
+  if (status === "completed") return "bg-zinc-700 text-zinc-200";
+  if (status === "lineup_announced") return "bg-amber-500/20 text-amber-200";
+  return "bg-zinc-800 text-zinc-200";
 }
 
 export function LiveTracker({ matchId }: { matchId: string }) {
@@ -213,9 +213,9 @@ export function LiveTracker({ matchId }: { matchId: string }) {
 
   if (loading) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-4">
-        <h2 className="text-lg font-bold text-slate-900">Live Points</h2>
-        <p className="mt-2 text-sm text-slate-600">Loading live scores...</p>
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+        <h2 className="text-lg font-bold text-zinc-50">Live Points</h2>
+        <p className="mt-2 text-sm text-zinc-300">Loading live scores...</p>
       </section>
     );
   }
@@ -224,34 +224,34 @@ export function LiveTracker({ matchId }: { matchId: string }) {
     return (
       <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
         <h2 className="text-lg font-bold text-rose-900">Live Points</h2>
-        <p className="mt-2 text-sm text-rose-700">{error}</p>
+        <p className="mt-2 text-sm text-rose-400">{error}</p>
       </section>
     );
   }
 
   return (
     <section className="space-y-3">
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-bold text-slate-900">Live Points</h2>
+          <h2 className="text-lg font-bold text-zinc-50">Live Points</h2>
           <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusTone(data?.match.status ?? "upcoming")}`}>
             {data?.match.status ?? "upcoming"}
           </span>
         </div>
-        <p className="mt-1 text-sm text-slate-600">Match ID: {matchId}</p>
-        <p className="mt-1 text-xs text-slate-500">Kickoff: {formatTime(data?.match.matchDate)}</p>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-sm text-zinc-300">Match ID: {matchId}</p>
+        <p className="mt-1 text-xs text-zinc-400">Kickoff: {formatTime(data?.match.matchDate)}</p>
+        <p className="mt-1 text-xs text-zinc-400">
           Last refresh: {formatTime(data?.fetchedAt)}
           {refreshing ? " (updating)" : ""}
         </p>
       </article>
 
       {!hasData ? (
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-700">
+        <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+          <p className="text-sm text-zinc-200">
             No fantasy team found for this match yet. Build your XI first to track live points and rank movement.
           </p>
-          <Link href={`/match/${matchId}`} className="mt-3 inline-flex rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-teal-50 hover:bg-teal-800">
+          <Link href={`/match/${matchId}`} className="mt-3 inline-flex rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
             Go To Team Builder
           </Link>
         </article>
@@ -261,26 +261,26 @@ export function LiveTracker({ matchId }: { matchId: string }) {
         const movement = movementByLeague[league.leagueId] ?? { rankDelta: null, pointsDelta: null };
 
         return (
-          <article key={league.leagueId} className="rounded-2xl border border-slate-200 bg-white p-4">
+          <article key={league.leagueId} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900">{league.leagueName}</h3>
-                <p className="text-xs text-slate-500">Team: {league.myTeamName}</p>
+                <h3 className="text-base font-bold text-zinc-50">{league.leagueName}</h3>
+                <p className="text-xs text-zinc-400">Team: {league.myTeamName}</p>
               </div>
-              <p className="text-right text-sm font-semibold text-slate-700">Updated {formatTime(league.updatedAt)}</p>
+              <p className="text-right text-sm font-semibold text-zinc-200">Updated {formatTime(league.updatedAt)}</p>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-3">
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Your Points</p>
-                <p className="text-lg font-bold text-slate-900">{toFixedOne(league.myPoints)}</p>
+                <p className="text-xs uppercase tracking-wide text-zinc-400">Your Points</p>
+                <p className="text-lg font-bold text-zinc-50">{toFixedOne(league.myPoints)}</p>
                 <p className={`text-xs font-semibold ${movementColor(movement.pointsDelta, true)}`}>
                   {pointsMovementLabel(movement.pointsDelta)}
                 </p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Your Rank</p>
-                <p className="text-lg font-bold text-slate-900">#{league.myRank ?? "-"}</p>
+                <p className="text-xs uppercase tracking-wide text-zinc-400">Your Rank</p>
+                <p className="text-lg font-bold text-zinc-50">#{league.myRank ?? "-"}</p>
                 <p className={`text-xs font-semibold ${movementColor(movement.rankDelta, true)}`}>
                   {rankMovementLabel(movement.rankDelta)}
                 </p>
@@ -288,36 +288,36 @@ export function LiveTracker({ matchId }: { matchId: string }) {
             </div>
 
             <div className="mt-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">League Leaderboard</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">League Leaderboard</p>
               <ul className="mt-2 space-y-2">
                 {league.leaderboard.slice(0, 6).map((entry) => (
                   <li
                     key={`${league.leagueId}-${entry.userId}`}
                     className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm ${
-                      entry.isMe ? "border-teal-200 bg-teal-50" : "border-slate-200 bg-white"
+                      entry.isMe ? "border-red-500/40 bg-red-500/10" : "border-zinc-800 bg-zinc-950"
                     }`}
                   >
-                    <p className="font-semibold text-slate-900">
+                    <p className="font-semibold text-zinc-50">
                       #{entry.rank ?? "-"} {entry.displayName}
                     </p>
-                    <p className="font-bold text-slate-900">{toFixedOne(entry.points)} pts</p>
+                    <p className="font-bold text-zinc-50">{toFixedOne(entry.points)} pts</p>
                   </li>
                 ))}
               </ul>
             </div>
 
             <div className="mt-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your Player Points</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Your Player Points</p>
               {league.players.length === 0 ? (
-                <p className="mt-1 text-sm text-slate-600">No selected players found for this team.</p>
+                <p className="mt-1 text-sm text-zinc-300">No selected players found for this team.</p>
               ) : (
                 <ul className="mt-2 space-y-2">
                   {league.players.map((player) => (
-                    <li key={`${league.myTeamId}-${player.playerId}`} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                      <p className="font-medium text-slate-800">
-                        {player.name} <span className="text-xs text-slate-500">({player.teamShortName})</span>
+                    <li key={`${league.myTeamId}-${player.playerId}`} className="flex items-center justify-between rounded-xl border border-zinc-800 px-3 py-2 text-sm">
+                      <p className="font-medium text-zinc-100">
+                        {player.name} <span className="text-xs text-zinc-400">({player.teamShortName})</span>
                       </p>
-                      <p className="font-bold text-slate-900">{toFixedOne(player.points)}</p>
+                      <p className="font-bold text-zinc-50">{toFixedOne(player.points)}</p>
                     </li>
                   ))}
                 </ul>

@@ -15,8 +15,8 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur">
-      <ul className="mx-auto flex h-16 w-full max-w-md items-center justify-around px-2">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-800 bg-black/90 backdrop-blur">
+      <ul className="mx-auto flex h-16 w-full max-w-md items-center justify-around px-3">
         {items.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
@@ -25,7 +25,9 @@ export function BottomNav() {
                 href={item.href}
                 className={cn(
                   "flex h-11 items-center justify-center rounded-xl text-sm font-semibold transition",
-                  isActive ? "bg-teal-700 text-teal-50" : "text-slate-500 hover:bg-slate-100"
+                  isActive
+                    ? "bg-gradient-to-r from-red-700 to-red-500 text-white shadow-[0_8px_24px_rgba(220,38,38,0.45)]"
+                    : "text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-100"
                 )}
               >
                 {item.label}

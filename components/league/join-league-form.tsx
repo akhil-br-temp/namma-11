@@ -41,38 +41,38 @@ export function JoinLeagueForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
-      <label className="block text-sm font-medium text-slate-700">
+      <label className="block text-sm font-medium text-zinc-200">
         Invite code
         <input
           type="text"
           value={inviteCode}
           onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
-          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm uppercase tracking-[0.2em] outline-none ring-teal-600 transition focus:ring-2"
+          className="mt-1 w-full rounded-xl border border-zinc-700 px-3 py-2.5 text-sm uppercase tracking-[0.2em] outline-none ring-red-500 transition focus:ring-2"
           required
           minLength={6}
           maxLength={6}
         />
       </label>
 
-      <label className="block text-sm font-medium text-slate-700">
+      <label className="block text-sm font-medium text-zinc-200">
         Display name (optional)
         <input
           type="text"
           value={displayName}
           onChange={(event) => setDisplayName(event.target.value)}
-          className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none ring-teal-600 transition focus:ring-2"
+          className="mt-1 w-full rounded-xl border border-zinc-700 px-3 py-2.5 text-sm outline-none ring-red-500 transition focus:ring-2"
         />
       </label>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-teal-50 transition hover:bg-teal-800 disabled:opacity-60"
+        className="w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
       >
         {loading ? "Joining..." : "Join league"}
       </button>
 
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+      {error ? <p className="text-sm text-rose-400">{error}</p> : null}
     </form>
   );
 }

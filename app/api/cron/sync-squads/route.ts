@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isCronAuthorized } from "@/lib/api/cron-auth";
+import { runIplSquadSeed } from "@/lib/jobs/seed-ipl-squads";
 import { runSquadSync } from "@/lib/jobs/sync-squads";
 
 export async function GET(request: NextRequest) {
@@ -8,8 +9,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await runSquadSync();
-    return NextResponse.json(result);
+    const seed = await runIplSquadSeed();
+    const squads = await runSquadSync();
+    return NextResponse.json({ seed, squads });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected squad sync error";
     return NextResponse.json({ error: message }, { status: 500 });

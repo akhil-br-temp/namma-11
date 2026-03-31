@@ -53,23 +53,23 @@ export function ManualSyncButton() {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Manual Data Sync</h3>
-          <p className="text-xs text-slate-600">Refresh fixtures and squads immediately (requires logged-in user).</p>
+          <h3 className="text-sm font-semibold text-zinc-50">Manual Data Sync</h3>
+          <p className="text-xs text-zinc-300">Refresh fixtures and squads immediately (requires logged-in user).</p>
         </div>
         <button
           type="button"
           onClick={triggerSync}
           disabled={syncing}
-          className="inline-flex items-center justify-center rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {syncing ? "Syncing..." : "Sync now"}
         </button>
       </div>
-      {message ? <p className="mt-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="mt-3 text-sm text-rose-700">{error}</p> : null}
+      {message ? <p className="mt-3 text-sm text-emerald-400">{message}</p> : null}
+      {error ? <p className="mt-3 text-sm text-rose-400">{error}</p> : null}
     </div>
   );
 }

@@ -26,27 +26,27 @@ export default async function LeagueHubPage() {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-bold text-slate-900">Private Leagues</h2>
-      <p className="text-sm text-slate-600">Create a league for your friends or join using an invite code.</p>
+      <h2 className="text-lg font-bold text-zinc-50">Private Leagues</h2>
+      <p className="text-sm text-zinc-300">Create a league for your friends or join using an invite code.</p>
       <div className="grid gap-2">
-        <Link href="/league/create" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <Link href="/league/create" className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm font-semibold text-zinc-200 hover:bg-zinc-900">
           Create League
         </Link>
-        <Link href="/league/join" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <Link href="/league/join" className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm font-semibold text-zinc-200 hover:bg-zinc-900">
           Join League
         </Link>
       </div>
 
       <div className="space-y-2 pt-1">
-        {leagues.length === 0 ? <p className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-600">You have not joined any leagues yet.</p> : null}
+        {leagues.length === 0 ? <p className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-300">You have not joined any leagues yet.</p> : null}
         {leagues.map((entry) => (
           <Link
             key={entry.league_id}
             href={`/league/${entry.league_id}`}
-            className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-slate-300"
+            className="block rounded-xl border border-zinc-800 bg-zinc-950 p-3 transition hover:border-zinc-700"
           >
-            <p className="font-semibold text-slate-900">{entry.leagues?.name ?? "Unnamed League"}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">Invite code: {entry.leagues?.invite_code ?? "-"}</p>
+            <p className="font-semibold text-zinc-50">{entry.leagues?.name ?? "Unnamed League"}</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-zinc-400">Invite code: {entry.leagues?.invite_code ?? "-"}</p>
           </Link>
         ))}
       </div>

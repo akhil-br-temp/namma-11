@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Barlow_Condensed, Manrope } from "next/font/google";
 import "./globals.css";
 
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
+});
+
+const barlowCondensed = Barlow_Condensed({
+  variable: "--font-barlow-condensed",
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -17,5 +23,5 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <html lang="en" className={`${manrope.variable} h-full antialiased`}><body className="min-h-full flex flex-col">{children}</body></html>;
+  return <html lang="en" className={`${manrope.variable} ${barlowCondensed.variable} h-full antialiased`}><body className="min-h-full flex flex-col">{children}</body></html>;
 }

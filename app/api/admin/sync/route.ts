@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runFixtureSync } from "@/lib/jobs/sync-fixtures";
+import { runIplSquadSeed } from "@/lib/jobs/seed-ipl-squads";
 import { runSquadSync } from "@/lib/jobs/sync-squads";
 
 export async function POST() {
@@ -15,8 +16,9 @@ export async function POST() {
 
   try {
     const fixtures = await runFixtureSync();
+    const seed = await runIplSquadSeed();
     const squads = await runSquadSync();
-    return NextResponse.json({ fixtures, squads });
+    return NextResponse.json({ fixtures, seed, squads });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sync failed";
     return NextResponse.json({ error: message }, { status: 500 });

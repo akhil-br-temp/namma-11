@@ -131,44 +131,44 @@ export function LoginForm() {
   };
 
   return (
-    <section className="w-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">Namma 11</p>
-      <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Join your private IPL league</h1>
-      <p className="mt-2 text-sm text-slate-600">Sign in to create teams, set captain and vice-captain, and follow live points.</p>
+    <section className="w-full rounded-3xl border border-zinc-800 bg-gradient-to-b from-zinc-900 to-zinc-950 p-6 shadow-[0_20px_56px_rgba(0,0,0,0.45)]">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-500">Namma 11</p>
+      <h1 className="display-heading text-3xl font-extrabold tracking-tight text-zinc-50">Join your private IPL league</h1>
+      <p className="mt-2 text-sm text-zinc-300">Sign in to create teams, set captain and vice-captain, and follow live points.</p>
 
       <button
         type="button"
         onClick={onGoogleLogin}
         disabled={loading}
-        className="mt-6 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
+        className="mt-6 w-full rounded-xl border border-zinc-700 bg-zinc-900/65 px-4 py-3 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-900 disabled:opacity-60"
       >
         Continue with Google
       </button>
 
       <div className="my-5 flex items-center gap-3">
-        <span className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs text-slate-500">or</span>
-        <span className="h-px flex-1 bg-slate-200" />
+        <span className="h-px flex-1 bg-zinc-700" />
+        <span className="text-xs text-zinc-400">or</span>
+        <span className="h-px flex-1 bg-zinc-700" />
       </div>
 
       <form onSubmit={onEmailLogin} className="space-y-3">
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-zinc-200">
           Email
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none ring-teal-600 transition focus:ring-2"
+            className="mt-1 w-full rounded-xl border border-zinc-700 px-3 py-2.5 text-sm outline-none ring-red-500 transition focus:ring-2"
             required
           />
         </label>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-zinc-200">
           Password
           <input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none ring-teal-600 transition focus:ring-2"
+            className="mt-1 w-full rounded-xl border border-zinc-700 px-3 py-2.5 text-sm outline-none ring-red-500 transition focus:ring-2"
             required
           />
         </label>
@@ -176,7 +176,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-teal-50 transition hover:bg-teal-800 disabled:opacity-60"
+          className="w-full rounded-xl bg-gradient-to-r from-red-700 to-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:from-red-600 hover:to-red-500 disabled:opacity-60"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>
@@ -185,7 +185,7 @@ export function LoginForm() {
           type="button"
           disabled={loading || !email || password.length < 6}
           onClick={onEmailSignup}
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+          className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60"
         >
           Create account with email
         </button>
@@ -194,7 +194,7 @@ export function LoginForm() {
           type="button"
           disabled={loading || !email}
           onClick={onMagicLink}
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+          className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60"
         >
           Send magic link
         </button>
@@ -203,13 +203,13 @@ export function LoginForm() {
           type="button"
           disabled={loading || !email}
           onClick={onResendConfirmation}
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+          className="w-full rounded-xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60"
         >
           Resend confirmation email
         </button>
       </form>
 
-      {visibleMessage ? <p className="mt-3 text-sm text-rose-700">{visibleMessage}</p> : null}
+      {visibleMessage ? <p className="mt-3 text-sm text-rose-400">{visibleMessage}</p> : null}
     </section>
   );
 }

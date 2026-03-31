@@ -20,12 +20,12 @@ type MatchPlayerRow = {
 
 function statusStyle(status: string): string {
   if (status === "live") {
-    return "bg-rose-100 text-rose-700";
+    return "bg-rose-500/20 text-rose-400";
   }
   if (status === "completed") {
-    return "bg-slate-200 text-slate-700";
+    return "bg-zinc-700 text-zinc-200";
   }
-  return "bg-sky-100 text-sky-800";
+  return "bg-zinc-800 text-zinc-200";
 }
 
 function formatMatchTime(value: string): string {
@@ -65,22 +65,22 @@ export default async function MatchesPage() {
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-slate-900">Upcoming IPL Matches</h2>
+        <h2 className="text-lg font-bold text-zinc-50">Upcoming IPL Matches</h2>
       </div>
       <ManualSyncButton />
-      {matches.length === 0 ? <p className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">No fixtures synced yet. Run sync to load matches.</p> : null}
+      {matches.length === 0 ? <p className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-300">No fixtures synced yet. Run sync to load matches.</p> : null}
       {matches.map((match) => {
         const squadCount = squadCoverage.get(match.id) ?? 0;
         return (
           <Link
             key={match.id}
             href={`/match/${match.id}`}
-            className="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300"
+            className="block rounded-2xl border border-zinc-800 bg-zinc-950 p-4 transition hover:border-zinc-700"
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex flex-1 items-center justify-between gap-2 mr-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative h-10 w-10 rounded-full bg-slate-100 p-1">
+                  <div className="relative h-10 w-10 rounded-full bg-zinc-800 p-1">
                     <Image
                       src={getTeamLogo(match.team_a?.short_name)}
                       alt={match.team_a?.name ?? "Team A"}
@@ -88,14 +88,14 @@ export default async function MatchesPage() {
                       className="object-contain p-1"
                     />
                   </div>
-                  <span className="font-bold text-slate-900">{match.team_a?.short_name ?? "T1"}</span>
+                  <span className="font-bold text-zinc-50">{match.team_a?.short_name ?? "T1"}</span>
                 </div>
 
-                <span className="text-[10px] font-black tracking-widest text-slate-400">VS</span>
+                <span className="text-[10px] font-black tracking-widest text-zinc-500">VS</span>
 
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-slate-900">{match.team_b?.short_name ?? "T2"}</span>
-                  <div className="relative h-10 w-10 rounded-full bg-slate-100 p-1">
+                  <span className="font-bold text-zinc-50">{match.team_b?.short_name ?? "T2"}</span>
+                  <div className="relative h-10 w-10 rounded-full bg-zinc-800 p-1">
                     <Image
                       src={getTeamLogo(match.team_b?.short_name)}
                       alt={match.team_b?.name ?? "Team B"}
@@ -109,8 +109,8 @@ export default async function MatchesPage() {
                 {match.status}
               </span>
             </div>
-            <p className="mt-2 text-sm text-slate-600">{formatMatchTime(match.match_date)} IST</p>
-            <p className="mt-1 text-xs text-slate-500">Squad records: {squadCount}</p>
+            <p className="mt-2 text-sm text-zinc-300">{formatMatchTime(match.match_date)} IST</p>
+            <p className="mt-1 text-xs text-zinc-400">Squad records: {squadCount}</p>
           </Link>
         );
       })}

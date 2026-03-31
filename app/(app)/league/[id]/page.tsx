@@ -44,33 +44,33 @@ export default async function LeaguePage({ params }: LeaguePageProps) {
 
   return (
     <section className="space-y-3">
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
-        <h2 className="text-lg font-bold text-slate-900">{league.name}</h2>
-        <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">Invite code: {league.invite_code}</p>
-        <p className="mt-2 text-sm text-slate-600">Live scoring is enabled. Rankings below refresh as score updates are synced.</p>
+      <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+        <h2 className="text-lg font-bold text-zinc-50">{league.name}</h2>
+        <p className="mt-1 text-xs uppercase tracking-wide text-zinc-400">Invite code: {league.invite_code}</p>
+        <p className="mt-2 text-sm text-zinc-300">Live scoring is enabled. Rankings below refresh as score updates are synced.</p>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Live Leaderboard</h3>
-        {latestLeaderboard.length === 0 ? <p className="mt-2 text-sm text-slate-600">No scored entries yet for this league.</p> : null}
+      <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Live Leaderboard</h3>
+        {latestLeaderboard.length === 0 ? <p className="mt-2 text-sm text-zinc-300">No scored entries yet for this league.</p> : null}
         <ul className="mt-2 space-y-2">
           {latestLeaderboard.map((row) => (
-            <li key={`${row.match_id}-${row.user_id}`} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-sm">
+            <li key={`${row.match_id}-${row.user_id}`} className="flex items-center justify-between rounded-xl border border-zinc-800 px-3 py-2 text-sm">
               <div>
-                <p className="font-semibold text-slate-900">#{row.rank ?? "-"} {memberNameByUserId.get(row.user_id) ?? "League Member"}</p>
-                <p className="text-xs text-slate-500">Match: {row.match_id}</p>
+                <p className="font-semibold text-zinc-50">#{row.rank ?? "-"} {memberNameByUserId.get(row.user_id) ?? "League Member"}</p>
+                <p className="text-xs text-zinc-400">Match: {row.match_id}</p>
               </div>
-              <p className="font-bold text-slate-900">{Number(row.total_points ?? 0).toFixed(1)} pts</p>
+              <p className="font-bold text-zinc-50">{Number(row.total_points ?? 0).toFixed(1)} pts</p>
             </li>
           ))}
         </ul>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Members</h3>
+      <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Members</h3>
         <ul className="mt-2 space-y-2">
           {(members ?? []).map((member) => (
-            <li key={member.user_id} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700">
+            <li key={member.user_id} className="rounded-xl border border-zinc-800 px-3 py-2 text-sm text-zinc-200">
               {member.display_name?.trim() || "League Member"}
             </li>
           ))}
